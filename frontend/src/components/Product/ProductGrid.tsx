@@ -1,15 +1,13 @@
 import { Heart, ShoppingCart, Star } from "lucide-react";
+import { Link } from "react-router-dom";
 import React from "react";
+
 const ProductGrid = () => {
     const products = [
         { id: 1, name: "Áo Thun Nam Premium", price: "299.000đ", oldPrice: "599.000đ", rating: 4.8, sales: 234 },
         { id: 2, name: "Váy Dạ Hội Sang Trọng", price: "1.299.000đ", oldPrice: "2.599.000đ", rating: 4.9, sales: 156 },
         { id: 3, name: "Quần Jean Slim Fit", price: "499.000đ", oldPrice: "899.000đ", rating: 4.7, sales: 189 },
         { id: 4, name: "Áo Sơ Mi Công Sở", price: "399.000đ", oldPrice: "699.000đ", rating: 4.6, sales: 278 },
-        { id: 5, name: "Đầm Dự Tiệc Elegant", price: "899.000đ", oldPrice: "1.799.000đ", rating: 4.9, sales: 145 },
-        { id: 6, name: "Áo Khoác Hoodie", price: "599.000đ", oldPrice: "999.000đ", rating: 4.8, sales: 312 },
-        { id: 7, name: "Chân Váy Xòe", price: "349.000đ", oldPrice: "649.000đ", rating: 4.5, sales: 198 },
-        { id: 8, name: "Quần Short Thể Thao", price: "249.000đ", oldPrice: "449.000đ", rating: 4.7, sales: 267 }
     ];
 
     return (
@@ -21,16 +19,15 @@ const ProductGrid = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {products.map((product) => (
-                    <div
+                    <Link
                         key={product.id}
+                        to={`/product/${product.id}`}
                         className="group bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all cursor-pointer transform hover:-translate-y-2"
                     >
+                        {/* Hình ảnh */}
                         <div className="relative h-64 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
                             <div className="absolute inset-0 flex items-center justify-center">
-                                <div className="text-center">
-                                    <ShoppingCart className="w-16 h-16 text-gray-400 mx-auto mb-2" />
-                                    <p className="text-gray-500">Hình ảnh sản phẩm</p>
-                                </div>
+                                <ShoppingCart className="w-16 h-16 text-gray-400 mx-auto mb-2" />
                             </div>
 
                             <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-all">
@@ -52,6 +49,7 @@ const ProductGrid = () => {
                             </div>
                         </div>
 
+                        {/* Thông tin */}
                         <div className="p-4">
                             <h3 className="font-semibold text-gray-800 mb-2 group-hover:text-indigo-600 transition-colors">
                                 {product.name}
@@ -63,8 +61,8 @@ const ProductGrid = () => {
                                         <Star
                                             key={i}
                                             className={`w-4 h-4 ${i < Math.floor(product.rating)
-                                                ? "text-yellow-400 fill-yellow-400"
-                                                : "text-gray-300"
+                                                    ? "text-yellow-400 fill-yellow-400"
+                                                    : "text-gray-300"
                                                 }`}
                                         />
                                     ))}
@@ -79,14 +77,8 @@ const ProductGrid = () => {
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </Link>
                 ))}
-            </div>
-
-            <div className="text-center mt-12">
-                <button className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-10 py-4 rounded-full font-semibold hover:shadow-2xl hover:scale-105 transition-all">
-                    Xem Tất Cả Sản Phẩm
-                </button>
             </div>
         </section>
     );

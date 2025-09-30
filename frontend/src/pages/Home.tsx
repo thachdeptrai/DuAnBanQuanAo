@@ -4,7 +4,7 @@ import Footer from "../components/Footer/Footer";
 import React from "react";
 import CategorySection from "../components/Category/CategoryGrid.tsx";
 import ProductGrid from "../components/Product/ProductGrid.tsx";
-import LoginPage from "../components/Login/Login.tsx";
+
 
 const Home = () => {
     return (
@@ -19,3 +19,4 @@ const Home = () => {
     );
 };
 export default Home;
+
