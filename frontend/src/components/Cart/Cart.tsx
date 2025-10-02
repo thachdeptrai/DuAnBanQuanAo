@@ -22,6 +22,7 @@ const Cart: React.FC<CartProps> = ({ onCloseCart }) => {
         { id: 1, name: "Áo Thun Nam Premium", price: 299000, oldPrice: 599000, quantity: 2 },
         { id: 2, name: "Váy Dạ Hội Sang Trọng", price: 1299000, oldPrice: 2599000, quantity: 1 },
         { id: 3, name: "Quần Jean Slim Fit", price: 499000, oldPrice: 899000, quantity: 3 },
+        { id: 4, name: "Áo Sơ Mi Công Sở", price: 399000, oldPrice: 699000, quantity: 1 }
     ]);
 
     const SHIPPING_FEE = 30000;

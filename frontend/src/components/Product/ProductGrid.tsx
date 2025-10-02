@@ -1,6 +1,7 @@
 import { Heart, ShoppingCart, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import React from "react";
+
 const ProductGrid = () => {
     const products = [
         { id: 1, name: "Áo Thun Nam Premium", price: "299.000đ", oldPrice: "599.000đ", rating: 4.8, sales: 234 },
@@ -22,8 +23,9 @@ const ProductGrid = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {products.map((product) => (
-                    <div
+                    <Link
                         key={product.id}
+                        to={`/product/${product.id}`}  // ✅ chuyển sang trang chi tiết
                         className="group bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all cursor-pointer transform hover:-translate-y-2"
                     >
                         <div className="relative h-64 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
@@ -35,7 +37,11 @@ const ProductGrid = () => {
                             </div>
 
                             <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-all">
-                                <button className="bg-white p-2 rounded-full shadow-lg hover:bg-pink-50 transition-all">
+                                <button
+                                    type="button"
+                                    className="bg-white p-2 rounded-full shadow-lg hover:bg-pink-50 transition-all"
+                                    onClick={(e) => e.preventDefault()} // ✅ chặn click này chuyển trang
+                                >
                                     <Heart className="w-5 h-5 text-gray-700 hover:text-pink-500" />
                                 </button>
                             </div>
@@ -47,7 +53,11 @@ const ProductGrid = () => {
                             </div>
 
                             <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-all flex items-end justify-center pb-6">
-                                <button className="bg-white text-gray-800 px-6 py-2 rounded-full font-semibold hover:bg-indigo-600 hover:text-white transition-all">
+                                <button
+                                    type="button"
+                                    className="bg-white text-gray-800 px-6 py-2 rounded-full font-semibold hover:bg-indigo-600 hover:text-white transition-all"
+                                    onClick={(e) => e.preventDefault()} // ✅ tránh click vào nút thì cũng nhảy trang
+                                >
                                     Thêm vào giỏ
                                 </button>
                             </div>
@@ -64,8 +74,8 @@ const ProductGrid = () => {
                                         <Star
                                             key={i}
                                             className={`w-4 h-4 ${i < Math.floor(product.rating)
-                                                ? "text-yellow-400 fill-yellow-400"
-                                                : "text-gray-300"
+                                                    ? "text-yellow-400 fill-yellow-400"
+                                                    : "text-gray-300"
                                                 }`}
                                         />
                                     ))}
@@ -80,7 +90,7 @@ const ProductGrid = () => {
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </Link>
                 ))}
             </div>
 
@@ -92,4 +102,5 @@ const ProductGrid = () => {
         </section>
     );
 };
+
 export default ProductGrid;

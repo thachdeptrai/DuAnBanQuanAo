@@ -1,15 +1,9 @@
-<<<<<<< HEAD
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import React from "react";
-=======
-import React from 'react';
-import Home from './pages/Home';
->>>>>>> 969e0cc7d6dee4a9c409367d5d34bf42c41e8230
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 import Home from "./pages/Home";
 import ProductDetail from "./components/Product/ProductDetail";
 import ProductDetailPage from "./pages/ProductDeltaiPage";
-import Product from "./pages/ProductDeltaiPage";
 
 // ✅ import thêm Header và Footer
 import Header from "./components/Header/Header";
@@ -25,7 +19,6 @@ function App() {
                     <Route path="/" element={<Home />} />
                     <Route path="/product/:id" element={<ProductDetailPage />} />
                     <Route path="/product-detail" element={<ProductDetail />} />
-                    <Route path="/product" element={<Product />} />
                     <Route path="/cart" element={<CartPage />} />
                 </Routes>
             </main>
