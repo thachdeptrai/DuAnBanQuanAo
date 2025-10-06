@@ -116,6 +116,21 @@ const Cart: React.FC<CartProps> = ({ onCloseCart }) => {
             ))}
         </div>
     );
+    // Sau CartItemsList, trước OrderSummary
+    const ProductImages = (
+        <div className="mt-6 grid grid-cols-4 gap-4">
+            {cartItems.map((item) => (
+                <div key={item.id} className="w-full h-24 bg-gray-100 rounded-md overflow-hidden flex items-center justify-center">
+                    <img
+                        src={item.image || "https://via.placeholder.com/100"}
+                        alt={item.name}
+                        className="object-cover w-full h-full"
+                    />
+                </div>
+            ))}
+        </div>
+    );
+
 
     // --- JSX chung cho Tóm tắt Đơn hàng ---
     const OrderSummary = (
@@ -181,7 +196,10 @@ const Cart: React.FC<CartProps> = ({ onCloseCart }) => {
                 <div className="grid lg:grid-cols-3 gap-8">
                     {/* Danh sách sản phẩm (2/3 cột) */}
                     <div className="lg:col-span-2">
-                        {CartItemsList}
+                        <div className="lg:col-span-2">
+                            {CartItemsList}
+                            {ProductImages} {/* 👈 thêm ở đây */}
+                        </div>
                     </div>
                     {/* Tổng cộng (1/3 cột) */}
                     <div className="lg:col-span-1">

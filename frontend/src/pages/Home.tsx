@@ -35,7 +35,7 @@ const Home: React.FC = () => {
     return (
         <div className="min-h-screen bg-white">
             <Header />
-            <HeroBanner banner={{ title: "Chào mừng đến Shop", image: "/images/banner.jpg" }} />
+            <HeroBanner images={[]} />
             <CategorySection categories={categories} onCategoryClick={handleCategoryClick} />
             <ProductGrid />
             <Footer />

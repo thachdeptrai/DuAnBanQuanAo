@@ -1,7 +1,5 @@
 import React, { useState } from "react";
 import { X, Eye, EyeOff } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-
 interface LoginPageProps {
     onClose: () => void;
     onSwitchToRegister: () => void;
@@ -15,7 +13,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onClose, onSwitchToRegister }) =>
     const [error, setError] = useState("");
     const [message, setMessage] = useState("");
 
-    const navigate = useNavigate();
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
