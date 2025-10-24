@@ -1,9 +1,11 @@
 import dotenv from "dotenv";
+dotenv.config(); // ⚡ phải load .env trước
+
 import app from "./src/app.js";
 
-dotenv.config();
-
 const PORT = process.env.PORT || 4000;
+
+console.log("✅ Using database:", process.env.MYSQL_DATABASE);
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);

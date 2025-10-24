@@ -1,5 +1,5 @@
 import express from "express";
-import pool from "../db.js";
+import pool from "../config/db.js";
 
 const router = express.Router();
 
@@ -78,10 +78,10 @@ router.post("/", async (req, res) => {
 router.put("/:id/status", async (req, res) => {
   try {
     const { status } = req.body;
-    await pool.query("UPDATE orders SET status=?, updated_at=NOW() WHERE id=?", [
-      status,
-      req.params.id,
-    ]);
+    await pool.query(
+      "UPDATE orders SET status=?, updated_at=NOW() WHERE id=?",
+      [status, req.params.id]
+    );
     res.json({ message: "Status updated" });
   } catch (err) {
     res.status(500).json({ error: err.message });

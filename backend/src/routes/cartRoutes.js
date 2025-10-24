@@ -1,5 +1,5 @@
 import express from "express";
-import pool from "../db.js";
+import pool from "../config/db.js";
 
 const router = express.Router();
 
@@ -23,7 +23,11 @@ router.get("/:user_id", async (req, res) => {
 router.post("/add", async (req, res) => {
   try {
     const { user_id, product_id, quantity } = req.body;
-    await pool.query("CALL add_to_cart(?, ?, ?)", [user_id, product_id, quantity]);
+    await pool.query("CALL add_to_cart(?, ?, ?)", [
+      user_id,
+      product_id,
+      quantity,
+    ]);
     res.json({ message: "Added to cart" });
   } catch (err) {
     res.status(500).json({ error: err.message });

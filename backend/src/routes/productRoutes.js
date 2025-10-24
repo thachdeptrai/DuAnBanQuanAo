@@ -1,5 +1,5 @@
 import express from "express";
-import pool from "../db.js";
+import pool from "../config/db.js";
 
 const router = express.Router();
 
@@ -87,20 +87,22 @@ router.post("/", async (req, res) => {
 // Update product
 router.put("/:id", async (req, res) => {
   try {
-    const {
-      name,
-      description,
-      price,
-      old_price,
-      image,
-      category_id,
-      stock,
-    } = req.body;
+    const { name, description, price, old_price, image, category_id, stock } =
+      req.body;
     await pool.query(
       `UPDATE products 
        SET name=?, description=?, price=?, old_price=?, image=?, category_id=?, stock=?, updated_at=NOW() 
        WHERE id=?`,
-      [name, description, price, old_price, image, category_id, stock, req.params.id]
+      [
+        name,
+        description,
+        price,
+        old_price,
+        image,
+        category_id,
+        stock,
+        req.params.id,
+      ]
     );
     res.json({ message: "Updated" });
   } catch (err) {

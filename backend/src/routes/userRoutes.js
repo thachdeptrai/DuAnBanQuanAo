@@ -1,12 +1,14 @@
 import express from "express";
-import pool from "../db.js";
+import pool from "../config/db.js";
 
 const router = express.Router();
 
 // Get all users
 router.get("/", async (req, res) => {
   try {
-    const [rows] = await pool.query("SELECT id, email, name, phone, address, role, created_at FROM users");
+    const [rows] = await pool.query(
+      "SELECT id, email, name, phone, address, role, created_at FROM users"
+    );
     res.json(rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -48,7 +50,8 @@ router.post("/login", async (req, res) => {
       "SELECT * FROM users WHERE email=? AND password=?",
       [email, password]
     );
-    if (rows.length === 0) return res.status(401).json({ error: "Invalid credentials" });
+    if (rows.length === 0)
+      return res.status(401).json({ error: "Invalid credentials" });
     res.json(rows[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });

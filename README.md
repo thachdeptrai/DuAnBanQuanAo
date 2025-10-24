@@ -12,17 +12,20 @@ Dự án website bán quần áo gồm 2 phần:
 Clone project và cài dependencies cho từng phần:
 
 git clone https://github.com/thachdeptrai/DuAnBanQuanAo.git
-+ cd miu-shop
 
-- **Backend**:
-+ cd backend
-+ npm install
-+ npm run dev
+- cd miu-shop
 
-- **Frontend**: 
-+ cd frontend
-+ npm install
-+ npm run dev
+* **Backend**:
+
+- cd backend
+- npm install
+- npm run dev
+
+* **Frontend**:
+
+- cd frontend
+- npm install
+- npm run dev
 
 ⚙️ 2. Cấu hình môi trường
 Tạo file .env trong thư mục backend/:
@@ -32,4 +35,4 @@ Tạo file .env trong thư mục backend/:
 - DB_HOST=localhost
 - DB_USER=root
 - DB_PASS=
-- DB_NAME=miushop
+- DB_NAME=sweetshop
