@@ -5,6 +5,7 @@ import HeroBanner from "../components/Hero/HeroBanner";
 import Footer from "../components/Footer/Footer";
 import CategorySection from "../components/Category/CategoryGrid";
 import ProductGrid from "../components/Product/ProductGrid";
+import Logo from "../components/Header/Logo";
 
 interface Category {
     id: string;
@@ -32,12 +33,16 @@ const Home: React.FC = () => {
         navigate(`/category/${id}`);
     };
 
+
     return (
         <div className="min-h-screen bg-white">
             <Header />
-            <HeroBanner images={[]} />
+            <HeroBanner images={[
+
+            ]} />
             <CategorySection categories={categories} onCategoryClick={handleCategoryClick} />
             <ProductGrid />
+
             <Footer />
         </div>
     );

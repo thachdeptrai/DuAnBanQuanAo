@@ -1,15 +1,32 @@
-// src/controllers/authController.js
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
-const UserModel = require("../model/user.model");
+// Thay đổi file này thành .js hoặc .mjs và đảm bảo 'type': 'module' trong package.json
+
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import UserModel from "../model/user.model.js"; // Đảm bảo thêm đuôi .js (hoặc .mjs)
+import crypto from "crypto"; // Thay require("crypto") bằng import
 
 const JWT_SECRET = process.env.JWT_ACCESS_SECRET || "supersecretaccess";
 
-// Giả định: Các hàm tiện ích cần thiết cho Forgot/Reset Password
-// Trong thực tế, bạn cần triển khai các hàm này.
-const generateResetToken = () => "unique_reset_token_123";
+// ... các hàm Controller sử dụng bcrypt, jwt, UserModel, và crypto sẽ theo sau
+
+// -------------------------------------------------------------------------
+// GIẢ ĐỊNH: Các hàm tiện ích cho Forgot/Reset Password
+// CẢNH BÁO: Trong môi trường production, DB_ResetToken_Store PHẢI LÀ MỘT KHO LƯU
+// TRỮ BỀN VỮNG (Persistent Store) như Redis hoặc một bảng riêng trong DB có TTL index.
+// -------------------------------------------------------------------------
+/**
+ * @desc Tạo một token đặt lại mật khẩu ngẫu nhiên và an toàn.
+ * @returns {string} Token hex 64 ký tự.
+ */
+const generateResetToken = () => {
+  // Tạo token đủ dài và ngẫu nhiên cho mục đích bảo mật (32 bytes = 64 ký tự hex)
+  return crypto.randomBytes(32).toString("hex");
+};
+
 const sendEmail = (to, subject, body) =>
-  console.log(`Sending email to ${to}: ${subject}`);
+  console.log(
+    `Sending email to ${to} (Real implementation needed): ${subject}`
+  );
 const DB_ResetToken_Store = {
   // Giả định một kho lưu trữ token tạm thời: { token: { userId, expiresAt } }
   store: {},
@@ -31,7 +48,7 @@ const DB_ResetToken_Store = {
   },
 };
 
-// ✨ Hàm kiểm tra độ mạnh mật khẩu chuẩn hóa: trả về MẢNG các lỗi
+// Hàm kiểm tra độ mạnh mật khẩu chuẩn hóa: trả về MẢNG các lỗi
 const isStrongPassword = (password) => {
   const errors = [];
 
@@ -62,7 +79,7 @@ const AuthController = {
       if (!name || !email || !password)
         return res.status(400).json({ message: "Thiếu thông tin bắt buộc" });
 
-      // ✨ 2. Validate Cải tiến: Kiểm tra độ mạnh mật khẩu và tạo thông báo chuẩn
+      // 2. Validate Cải tiến: Kiểm tra độ mạnh mật khẩu và tạo thông báo chuẩn
       const passwordErrors = isStrongPassword(password);
       if (passwordErrors.length > 0) {
         const errorMessage = `Mật khẩu không hợp lệ: ${passwordErrors.join(
@@ -125,7 +142,7 @@ const AuthController = {
   },
 
   // --------------------------------------------------
-  // ✨ 1. CHỨC NĂNG ĐĂNG XUẤT (LOGOUT)
+  // 1. CHỨC NĂNG ĐĂNG XUẤT (LOGOUT)
   // --------------------------------------------------
   async logout(req, res) {
     // Đối với JWT, hành động đăng xuất chủ yếu là xóa token ở phía client.
@@ -134,7 +151,7 @@ const AuthController = {
   },
 
   // --------------------------------------------------
-  // ✨ 2. CHỨC NĂNG ĐỔI MẬT KHẨU (CHANGE PASSWORD) - Yêu cầu Token
+  // 2. CHỨC NĂNG ĐỔI MẬT KHẨU (CHANGE PASSWORD) - Yêu cầu Token
   // --------------------------------------------------
   async changePassword(req, res) {
     // Giả định middleware đã chạy và gắn user info vào req.user
@@ -187,7 +204,7 @@ const AuthController = {
   },
 
   // --------------------------------------------------
-  // ✨ 3. CHỨC NĂNG LẤY LẠI MẬT KHẨU (FORGOT PASSWORD) - BƯỚC 1: Gửi Token
+  // 3. CHỨC NĂNG LẤY LẠI MẬT KHẨU (FORGOT PASSWORD) - BƯỚC 1: Gửi Token
   // --------------------------------------------------
   async forgotPassword(req, res) {
     try {
@@ -202,12 +219,10 @@ const AuthController = {
       const user = await UserModel.findByEmail(email);
       if (!user) {
         // Luôn trả về thông báo thành công chung để tránh lộ email
-        return res
-          .status(200)
-          .json({
-            message:
-              "Nếu tài khoản tồn tại, đường link đặt lại mật khẩu đã được gửi đến email của bạn.",
-          });
+        return res.status(200).json({
+          message:
+            "Nếu tài khoản tồn tại, đường link đặt lại mật khẩu đã được gửi đến email của bạn.",
+        });
       }
 
       // 1. Tạo và Lưu Token Đặt lại Mật khẩu (Reset Token)
@@ -222,11 +237,9 @@ const AuthController = {
         `Bạn đã yêu cầu đặt lại mật khẩu. Vui lòng truy cập liên kết sau: ${resetURL}`
       );
 
-      res
-        .status(200)
-        .json({
-          message: "Đường link đặt lại mật khẩu đã được gửi đến email của bạn.",
-        });
+      res.status(200).json({
+        message: "Đường link đặt lại mật khẩu đã được gửi đến email của bạn.",
+      });
     } catch (err) {
       console.error(err);
       res.status(500).json({ message: "Lỗi server" });
@@ -234,7 +247,7 @@ const AuthController = {
   },
 
   // --------------------------------------------------
-  // ✨ 4. CHỨC NĂNG LẤY LẠI MẬT KHẨU (FORGOT PASSWORD) - BƯỚC 2: Đặt lại Mật khẩu
+  // 4. CHỨC NĂNG LẤY LẠI MẬT KHẨU (FORGOT PASSWORD) - BƯỚC 2: Đặt lại Mật khẩu
   // --------------------------------------------------
   async resetPassword(req, res) {
     try {
@@ -272,11 +285,9 @@ const AuthController = {
       // 4. Xóa Token khỏi DB để không thể sử dụng lại
       DB_ResetToken_Store.delete(token);
 
-      res
-        .status(200)
-        .json({
-          message: "Đặt lại mật khẩu thành công. Vui lòng đăng nhập lại.",
-        });
+      res.status(200).json({
+        message: "Đặt lại mật khẩu thành công. Vui lòng đăng nhập lại.",
+      });
     } catch (err) {
       console.error(err);
       res.status(500).json({ message: "Lỗi server" });
@@ -284,4 +295,4 @@ const AuthController = {
   },
 };
 
-module.exports = AuthController;
+export default AuthController;

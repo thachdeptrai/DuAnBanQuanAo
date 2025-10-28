@@ -1,6 +1,6 @@
-// src/middleware/authMiddleware.js
+// src/middleware/authMiddleware.js (hoặc authMiddleware.mjs)
 
-const jwt = require("jsonwebtoken");
+import jwt from "jsonwebtoken"; // Thay require
 
 // Lấy secret key từ biến môi trường.
 // Dùng giá trị mặc định chỉ khi biết chắc chắn biến môi trường không được set.
@@ -9,7 +9,7 @@ const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || "supersecretaccess";
 /**
  * Middleware: Yêu cầu xác thực (Authorization Middleware)
  * Kiểm tra header 'Authorization' để xác minh token JWT hợp lệ.
- * * @param {object} req - Đối tượng Request
+ * @param {object} req - Đối tượng Request
  * @param {object} res - Đối tượng Response
  * @param {function} next - Hàm tiếp tục xử lý
  */
@@ -60,5 +60,9 @@ function requireAuth(req, res, next) {
   }
 }
 
-// Export middleware dưới tên authMiddleware
-module.exports = { authMiddleware: requireAuth };
+// Export middleware dưới tên authMiddleware (Named Export)
+export { requireAuth as authMiddleware };
+
+// Hoặc nếu bạn muốn export default:
+// export default requireAuth;
+// => Khi đó, ở file khác sẽ import là: import requireAuth from "../middlewares/authMiddleware.js";

@@ -7,6 +7,8 @@ import ProductDetail from "./components/Product/ProductDetail";
 import ProductDetailPage from "./pages/ProductDeltaiPage";
 
 import CartPage from "./pages/CartPage";
+import ProfilePage from "./pages/ProfilePage";
+import { LogIn } from "lucide-react";
 
 
 function App() {
@@ -19,6 +21,10 @@ function App() {
                     <Route path="/product/:id" element={<ProductDetailPage />} />
                     <Route path="/product-detail" element={<ProductDetail />} />
                     <Route path="/cart" element={<CartPage />} />
+                    <Route path="/profile" element={<ProfilePage />} />
+
+
+
                 </Routes>
             </main>
         </Router>

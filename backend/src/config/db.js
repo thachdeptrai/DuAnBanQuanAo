@@ -1,5 +1,9 @@
-const mysql = require("mysql2/promise");
-require("dotenv").config();
+// src/config/db.js (hoặc db.mjs)
+
+import mysql from "mysql2/promise";
+import "dotenv/config"; // 💡 CÁCH CHUẨN ĐỂ TẢI BIẾN MÔI TRƯỜNG TRONG ES MODULES
+
+// 🚨 LƯU Ý: Không cần gọi require("dotenv").config() hoặc dotenv.config() nữa.
 
 const pool = mysql.createPool({
   host: process.env.MYSQL_HOST,
@@ -11,4 +15,5 @@ const pool = mysql.createPool({
   queueLimit: 0,
 });
 
-module.exports = pool;
+// Sử dụng export default để xuất pool
+export default pool;
