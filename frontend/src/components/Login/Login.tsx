@@ -89,7 +89,7 @@ const LoginPage: React.FC<LoginPageProps> = ({
                 }
 
                 setMessage(result.message || "🎉 Đăng nhập thành công!");
-                setTimeout(() => onClose(), 1000);
+                setTimeout(() => onClose(), 1500);
             } else {
                 setError(result.message || "❌ Sai thông tin đăng nhập.");
             }

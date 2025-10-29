@@ -5,7 +5,6 @@ import ProductGrid from "../components/Product/ProductGrid";
 import Profile from "../components/Profile/Profle";
 
 const ProfilePage: React.FC = () => {
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
 
     return (
         <div className="min-h-screen bg-white">

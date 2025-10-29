@@ -1,7 +1,11 @@
+// File: src/components/Cart.tsx (Chỉnh sửa)
+
 import React, { useState } from "react";
 import { ShoppingCart, Trash2 } from "lucide-react";
+// 💡 Import component mới
+import CartProduct from "../Ui/CartProduct"; // Thay đổi đường dẫn nếu cần
 
-// Định nghĩa Interface cho item trong giỏ hàng
+// Định nghĩa Interface cho item trong giỏ hàng (giữ nguyên hoặc import từ CartProduct)
 interface CartItem {
     id: number;
     name: string;
@@ -11,9 +15,9 @@ interface CartItem {
     image?: string;
 }
 
-// 1. Định nghĩa Interface cho Props của Cart component (sử dụng onCloseCart để tránh xung đột DOM)
+// 1. Định nghĩa Interface cho Props của Cart component
 interface CartProps {
-    onCloseCart?: () => void; // Dùng onCloseCart thay cho onClose
+    onCloseCart?: () => void;
 }
 
 // 2. Định nghĩa component với props
@@ -51,72 +55,27 @@ const Cart: React.FC<CartProps> = ({ onCloseCart }) => {
     };
 
     // 🌟 LOGIC QUAN TRỌNG: Xác định chế độ hiển thị
-    // Nếu có prop onCloseCart được truyền (tức là đang chạy trong Modal/Sidebar), thì là Sidebar View.
-    // Nếu không có, thì là Page View (dạng trang đầy đủ).
     const isSidebarView = !!onCloseCart;
     const isPageView = !isSidebarView;
 
     // --- JSX chung cho Cart Item ---
+    // 💡 SỬ DỤNG COMPONENT MỚI CARTPRODUCT
     const CartItemsList = (
         <div className={isPageView ? "space-y-6" : "space-y-4"}>
             {cartItems.map((item) => (
-                <div
+                <CartProduct
                     key={item.id}
-                    className="flex items-center bg-white border border-gray-100 rounded-lg p-3 shadow-sm hover:shadow-md transition"
-                >
-                    {/* Ảnh sản phẩm */}
-                    <div className="w-16 h-16 bg-gray-100 rounded-md flex items-center justify-center overflow-hidden">
-                        <img
-                            src={item.image || "https://via.placeholder.com/64"}
-                            alt={item.name}
-                            className="object-cover w-full h-full"
-                        />
-                    </div>
-
-                    {/* Thông tin & Giá */}
-                    <div className="flex-1 ml-3">
-                        <h3 className={`font-medium text-gray-800 ${isPageView ? 'text-lg' : 'text-sm'} truncate`}>
-                            {item.name}
-                        </h3>
-                        <div className="text-indigo-600 font-bold text-base">
-                            {formatCurrency(item.price)}
-                        </div>
-                        {item.oldPrice && (
-                            <div className="text-gray-400 line-through text-xs">
-                                {formatCurrency(item.oldPrice)}
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Số lượng và Xóa */}
-                    <div className="flex flex-col items-end space-y-2">
-                        <button
-                            onClick={() => removeItem(item.id)}
-                            className="text-red-500 hover:text-red-700 transition"
-                        >
-                            <Trash2 className="w-4 h-4" />
-                        </button>
-                        <div className="flex items-center space-x-1">
-                            <button
-                                onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                                className="w-6 h-6 bg-gray-200 rounded text-sm hover:bg-gray-300"
-                            >
-                                -
-                            </button>
-                            <span className="w-6 text-center text-sm">{item.quantity}</span>
-                            <button
-                                onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                className="w-6 h-6 bg-gray-200 rounded text-sm hover:bg-gray-300"
-                            >
-                                +
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                    item={item}
+                    isPageView={isPageView}
+                    updateQuantity={updateQuantity}
+                    removeItem={removeItem}
+                    formatCurrency={formatCurrency}
+                />
             ))}
         </div>
     );
-    // Sau CartItemsList, trước OrderSummary
+
+    // ... (Các phần ProductImages và OrderSummary còn lại giữ nguyên)
     const ProductImages = (
         <div className="mt-6 grid grid-cols-4 gap-4">
             {cartItems.map((item) => (
@@ -131,8 +90,6 @@ const Cart: React.FC<CartProps> = ({ onCloseCart }) => {
         </div>
     );
 
-
-    // --- JSX chung cho Tóm tắt Đơn hàng ---
     const OrderSummary = (
         <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-100 h-fit">
             <h3 className="text-xl font-semibold mb-4">Tóm tắt đơn hàng</h3>
@@ -171,6 +128,7 @@ const Cart: React.FC<CartProps> = ({ onCloseCart }) => {
     // -------------------------------------------------------------
 
     if (cartItems.length === 0) {
+        // ... (Logic giỏ hàng trống giữ nguyên)
         return (
             <div className={`text-center ${isPageView ? 'py-40' : 'py-20'} w-full`}>
                 <ShoppingCart className="w-16 h-16 text-gray-400 mx-auto mb-4" />
@@ -198,7 +156,7 @@ const Cart: React.FC<CartProps> = ({ onCloseCart }) => {
                     <div className="lg:col-span-2">
                         <div className="lg:col-span-2">
                             {CartItemsList}
-                            {ProductImages} {/* 👈 thêm ở đây */}
+                            {ProductImages}
                         </div>
                     </div>
                     {/* Tổng cộng (1/3 cột) */}

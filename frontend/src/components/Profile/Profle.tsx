@@ -62,6 +62,7 @@ const Profile: React.FC = () => {
     // Thông báo chung cho trang Profile (sau khi đóng modal)
     const [message, setMessage] = useState<string | null>(null);
     const [messageType, setMessageType] = useState<'success' | 'error' | null>(null);
+    const [isLoggingOut, setIsLoggingOut] = useState(false); // Thêm state này
 
     // Thông báo riêng cho Modal Đổi mật khẩu
     const [passwordMessage, setPasswordMessage] = useState<string | null>(null);
@@ -131,22 +132,31 @@ const Profile: React.FC = () => {
         };
         fetchProfile();
     }, []);
-
-    // Logout
+    // Logout - ĐÃ CHỈNH SỬA
     const handleLogout = async () => {
+        // 1. Hiển thị Dialog Loading
+        setIsLoggingOut(true);
+
+        // 2. Gọi API logout trong nền
         try {
-            await logout(); // Gọi API logout
+            await logout();
         } catch {
-            // Bỏ qua lỗi logout nếu server không phản hồi, vẫn xóa token cục bộ
+            // Bỏ qua lỗi logout
         }
 
-        // Xóa thông tin xác thực cục bộ (dù API thành công hay thất bại)
-        localStorage.removeItem("authToken");
-        localStorage.removeItem("authUser");
+        // 3. Đợi 1000ms (1 giây)
+        setTimeout(() => {
+            // 4. Xóa thông tin xác thực cục bộ
+            localStorage.removeItem("authToken");
+            localStorage.removeItem("authUser");
 
-        navigate("/login", { replace: true });
+            // 5. Ẩn Dialog Loading
+            setIsLoggingOut(false);
+
+            // 6. Chuyển hướng về trang chủ
+            navigate("/", { replace: true });
+        }, 1000); // Độ trễ 1000 mili giây (1 giây)
     };
-
     // Cập nhật thông tin
     const handleUpdateProfile = async () => {
         setAppMessage(null);
@@ -441,6 +451,22 @@ const Profile: React.FC = () => {
                             {passwordMessageType === 'success' ? 'Đang đóng...' : 'Lưu Mật Khẩu'}
                         </button>
                     </div>
+                </div>
+            </Modal>
+            {/* 💡 MODAL ĐANG ĐĂNG XUẤT */}
+            <Modal
+                title=""
+                isOpen={isLoggingOut}
+                onClose={() => { }} // Vô hiệu hóa đóng bằng cách nhấn ra ngoài
+                className="max-w-xs" // Thiết lập kích thước nhỏ hơn
+            >
+                <div className="flex flex-col items-center justify-center p-2">
+                    {/* Spinner hoặc Loading Icon (Tùy chọn) */}
+                    <svg className="animate-spin -ml-1 mr-3 h-6 w-6 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <p className="mt-4 text-xl font-bold text-red-600">Đang đăng xuất...</p>
                 </div>
             </Modal>
         </div>
