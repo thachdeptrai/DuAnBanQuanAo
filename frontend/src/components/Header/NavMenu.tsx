@@ -1,5 +1,5 @@
-import { Gift, Zap } from "lucide-react";
 import React from "react";
+import { Gift, Zap } from "lucide-react";
 
 interface Category {
   id: string;
@@ -19,26 +19,26 @@ const NavMenu: React.FC<NavMenuProps> = ({ categories = [], onCategoryClick }) =
 
   return (
     <nav className="container mx-auto px-6 py-3">
-      <ul className="flex items-center justify-center space-x-8 flex-wrap">
-        {defaultMenuItems.map((item) => (
-          <li key={item.id}>
+      <ul className="flex flex-wrap items-center justify-center gap-6 md:gap-8">
+        {defaultMenuItems.map(({ id, name, icon: Icon }) => (
+          <li key={id}>
             <button
-              onClick={() => onCategoryClick(item.id)}
-              className="flex items-center space-x-1 text-gray-700 hover:text-indigo-600 font-medium transition-all hover:scale-110 group"
+              onClick={() => onCategoryClick(id)}
+              className="flex items-center gap-1 text-gray-700 hover:text-indigo-600 font-medium transition-all hover:scale-110 group"
             >
-              {item.icon && <item.icon className="w-4 h-4 group-hover:animate-pulse" />}
-              <span>{item.name}</span>
+              <Icon className="w-4 h-4 group-hover:animate-pulse" />
+              <span>{name}</span>
             </button>
           </li>
         ))}
 
-        {categories.map((category) => (
-          <li key={category.id}>
+        {categories.map(({ id, name }) => (
+          <li key={id}>
             <button
-              onClick={() => onCategoryClick(category.id)}
+              onClick={() => onCategoryClick(id)}
               className="text-gray-700 hover:text-indigo-600 font-medium transition-all hover:scale-110"
             >
-              {category.name}
+              {name}
             </button>
           </li>
         ))}

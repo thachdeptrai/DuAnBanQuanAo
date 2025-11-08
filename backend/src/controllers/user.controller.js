@@ -10,6 +10,11 @@ export const getUserInfo = async (req, res) => {
   try {
     const userId = req.user.id;
     const user = await UserModel.findById(userId);
+    console.log(
+      "Payload Token ID:",
+      req.user ? req.user.id : "Không tìm thấy req.user"
+    );
+    console.log(`[USER-DEBUG] Find result: ${user ? "FOUND" : "NOT FOUND"}`); // Log 2
 
     if (!user) {
       return res.status(404).json({ message: "Người dùng không tồn tại" });
@@ -50,18 +55,16 @@ export const updateUser = async (req, res) => {
 
     // CHỈ truyền các trường đã được lọc vào hàm Model
     const success = await UserModel.updateUser(userId, updateData);
-
     if (!success) {
-      // Trường hợp không có hàng nào bị ảnh hưởng (dữ liệu giống hệt hoặc user không tồn tại)
-      return res.status(400).json({
-        message:
-          "Cập nhật không thành công. Không có thay đổi nào được ghi nhận.",
-      });
+      // Trường hợp không có hàng nào bị ảnh hưởng (dữ liệu giống hệt)
+      // Ta vẫn chấp nhận và tiếp tục lấy dữ liệu updatedUser.
+      console.log(
+        `[UPDATE-WARN] User ID ${userId}: No rows affected, data might be identical.`
+      );
     }
 
     // Lấy thông tin người dùng đã cập nhật
     const updatedUser = await UserModel.findById(userId);
-
     // Loại bỏ password và trả về dữ liệu
     const { password, ...userData } = updatedUser;
     res.json({ message: "Cập nhật thành công", data: userData });

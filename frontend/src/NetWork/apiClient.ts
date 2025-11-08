@@ -1,44 +1,45 @@
 /**
- * ✅ apiClient.ts — Phiên bản Chuẩn Hóa Cuối Cùng
+ * ✅ apiClient.ts — Phiên bản Chuẩn Hóa Cuối Cùng (Dành cho Vite)
+ *
+ * - Tự động lấy BaseURL từ .env (VITE_API_URL)
+ * - Tự động gắn token vào Header
+ * - Tự động stringify body
+ * - Xử lý lỗi 401, clear session
+ * - Tối ưu cho TypeScript + Vite
  */
 
-// ⭐ 1. IMPORT CÁC HÀM QUẢN LÝ SESSION CHUẨN CỦA BẠN
-import { getUserSession, clearUserSession } from "../utils/session"; 
-// ^^^ Giữ nguyên đường dẫn này nếu cấu trúc thư mục của bạn là `src/NetWork` và `src/utils`
+import { getUserSession, clearUserSession } from "../utils/session";
 
-/* eslint-disable no-undef */
-declare const process: {
-  env: Record<string, string | undefined>;
-};
-
-// ----------------------------------------------------
-// ⭐ 1. SỬA: Logic Lấy Token (Đã chính xác)
-// ----------------------------------------------------
-
-/** Lấy token từ object session đã lưu. */
+/* ----------------------------------------------------
+ * 1️⃣ HÀM LẤY TOKEN
+ * ---------------------------------------------------- */
 const getToken = (): string | null => {
   const session = getUserSession();
   return session?.token || null;
 };
 
-// ----------------------------------------------------
-// ⭐ 2. Cấu hình Base URL (Đã chính xác)
-// ----------------------------------------------------
+/* ----------------------------------------------------
+ * 2️⃣ BASE URL — CHUẨN CHO VITE
+ * ---------------------------------------------------- */
+// ⚠️ Vite không dùng process.env mà dùng import.meta.env
 const API_BASE_URL = (() => {
-  if (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_API_URL) {
-    return process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "");
-  }
+  const envUrl = import.meta.env?.VITE_API_URL;
+
+  if (envUrl) return envUrl.replace(/\/$/, "");
+
+  // fallback khi không có biến môi trường
   if (typeof window !== "undefined") {
-    return window.location.origin + "/api"; 
+    return window.location.origin + "/api";
   }
+
   return "http://localhost:4000/api";
 })();
 
-// ----------------------------------------------------
-// ⭐ 3. SỬA LỖI TYPESCRIPT (RequestOptions)
-// ----------------------------------------------------
+console.log("🚀 API_BASE_URL =", API_BASE_URL);
 
-/** Generic API Response format (Giữ nguyên) */
+/* ----------------------------------------------------
+ * 3️⃣ ĐỊNH NGHĨA KIỂU DỮ LIỆU CHUNG
+ * ---------------------------------------------------- */
 export interface ApiResponse<T = any> {
   success: boolean;
   message: string;
@@ -46,16 +47,13 @@ export interface ApiResponse<T = any> {
   data?: T;
 }
 
-/** * Custom Request Options cho phép body là object.
- * ⭐ ĐÃ SỬA: extends RequestInit và ghi đè body
- */
 interface RequestOptions extends RequestInit {
   body?: any;
 }
 
-// ----------------------------------------------------
-// ⭐ 4. Logic Xử lý Phản hồi (handleResponse) - Đã chính xác
-// ----------------------------------------------------
+/* ----------------------------------------------------
+ * 4️⃣ HÀM XỬ LÝ PHẢN HỒI
+ * ---------------------------------------------------- */
 const handleResponse = async <T>(response: Response): Promise<ApiResponse<T>> => {
   let data: any;
   try {
@@ -67,10 +65,11 @@ const handleResponse = async <T>(response: Response): Promise<ApiResponse<T>> =>
   if (!response.ok) {
     const message = data?.message || `HTTP ${response.status}: ${response.statusText}`;
 
+    // Nếu token hết hạn hoặc không hợp lệ → clear session
     if (response.status === 401) {
-      // Dùng hàm xóa session chuẩn
-      clearUserSession(); 
+      clearUserSession();
       console.warn("🔒 Token hết hạn hoặc không hợp lệ — đã xóa session cục bộ.");
+      
     }
 
     return {
@@ -88,9 +87,9 @@ const handleResponse = async <T>(response: Response): Promise<ApiResponse<T>> =>
   };
 };
 
-// ----------------------------------------------------
-// ⭐ 5. Hàm gọi API tập trung (apiClient) - Đã chính xác
-// ----------------------------------------------------
+/* ----------------------------------------------------
+ * 5️⃣ HÀM GỌI API CHÍNH
+ * ---------------------------------------------------- */
 export const apiClient = async <T>(
   endpoint: string,
   options: RequestOptions = {}
@@ -99,7 +98,6 @@ export const apiClient = async <T>(
 
   const headers: HeadersInit = {
     "Content-Type": "application/json",
-    // Tự động thêm Bearer token
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(options.headers || {}),
   };
@@ -107,7 +105,6 @@ export const apiClient = async <T>(
   const finalOptions: RequestInit = {
     ...options,
     headers,
-    // Tự động JSON.stringify body nếu là object
     body:
       options.body && typeof options.body !== "string"
         ? JSON.stringify(options.body)
@@ -115,6 +112,9 @@ export const apiClient = async <T>(
   };
 
   const url = `${API_BASE_URL}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
+
+  // 🔑 DEBUG: log token và URL trước khi gửi request
+  console.log("🔑 Sending request to:", url, "with token:", token);
 
   try {
     const response = await fetch(url, finalOptions);
@@ -129,8 +129,8 @@ export const apiClient = async <T>(
   }
 };
 
-// ----------------------------------------------------
-// ⭐ 6. Export (Giữ đơn giản)
-// ----------------------------------------------------
 
+/* ----------------------------------------------------
+ * 6️⃣ EXPORT
+ * ---------------------------------------------------- */
 export { getToken };

@@ -35,9 +35,16 @@ const Footer = () => {
           <div>
             <h4 className="font-bold text-lg mb-4">Kết Nối</h4>
             <div className="flex space-x-4">
-              <button className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition-all">
-                <span className="text-xl">f</span>
-              </button>
+              {/* Đã thay đổi từ <button> thành <a> và thêm href */}
+              <a
+                href="https://www.facebook.com/profile.php?id=61576103617463"
+                target="_blank" // Thêm target="_blank" để mở liên kết trong tab mới (nên dùng cho liên kết ngoài)
+                rel="noopener noreferrer" // Bảo mật hơn khi dùng target="_blank"
+                className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition-all"
+              >
+                <span className="text-xl">F</span>
+              </a>
+              {/* Giữ nguyên các nút khác hoặc bạn có thể thay đổi tương tự */}
               <button className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition-all">
                 <span className="text-xl">in</span>
               </button>

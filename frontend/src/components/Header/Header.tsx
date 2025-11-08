@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { ShoppingCart, Heart, User, Menu, X } from "lucide-react";
+import { ShoppingCart, Heart, User, Menu, X, LogOut, Home, Loader2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
 import NavMenu from "./NavMenu";
@@ -9,133 +9,175 @@ import SearchBar from "./SearchBar";
 import LoginPage from "../Login/Login";
 import RegisterPage from "../Register/RegisterPage";
 
-// Định nghĩa kiểu dữ liệu cho User
-interface UserSession {
-    token: string;
-    name: string;
-    email: string;
-    phone?: string;
+import { getUserSession, saveUserSession, clearUserSession, type UserSession } from "../../utils/session";
+
+interface NavIconProps {
+    to: string;
+    Icon: React.ElementType;
+    label: string;
+    badgeCount?: number;
+    title: string;
 }
 
-// Hàm lấy session user/token
-const getUserSession = (): UserSession | null => {
-    if (typeof window === "undefined") return null;
-    const token = localStorage.getItem("authToken");
-    const user = localStorage.getItem("authUser");
-    try {
-        return token && user ? JSON.parse(user) : null;
-    } catch (error) {
-        console.error("Lỗi khi phân tích JSON authUser:", error);
-        return null;
-    }
-};
+const NavIcon: React.FC<NavIconProps> = ({ to, Icon, label, badgeCount, title }) => (
+    <Link
+        to={to}
+        className="relative flex flex-col items-center p-2 group hover:text-indigo-600 transition-all"
+        title={title}
+    >
+        <Icon className="w-6 h-6 mb-0.5 text-gray-700 group-hover:text-indigo-600 transition-colors" />
+        <span className="text-xs font-medium text-gray-500 group-hover:text-indigo-600 hidden sm:inline">
+            {label}
+        </span>
+        {badgeCount && badgeCount > 0 && (
+            <span className="absolute top-0 right-0 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full min-w-[18px] text-center transform translate-x-1/4 -translate-y-1/4">
+                {badgeCount}
+            </span>
+        )}
+    </Link>
+);
 
 const Header: React.FC = () => {
     const navigate = useNavigate();
     const [menuOpen, setMenuOpen] = useState(false);
     const [loginOpen, setLoginOpen] = useState(false);
     const [isRegister, setIsRegister] = useState(false);
-    const [user, setUser] = useState<UserSession | null>(null); // Sử dụng kiểu dữ liệu đã định nghĩa
+    const [user, setUser] = useState<UserSession | null>(null);
+    const [dropdownOpen, setDropdownOpen] = useState(false);
+    const [logoutModalOpen, setLogoutModalOpen] = useState(false);
 
     useEffect(() => {
-        const sessionUser = getUserSession();
-        setUser(sessionUser);
+        setUser(getUserSession());
     }, []);
 
+    const toggleDropdown = () => setDropdownOpen(prev => !prev);
+
     const handleUserClick = () => {
-        const sessionUser = getUserSession();
-        if (sessionUser) {
-            // Đã đăng nhập: Chuyển hướng đến trang profile
-            navigate("/profile");
-        } else {
-            // Chưa đăng nhập: Mở modal login
-            setIsRegister(false); // mặc định mở login
+        const current = getUserSession();
+        if (current) toggleDropdown();
+        else {
+            setIsRegister(false);
             setLoginOpen(true);
         }
     };
 
-    const handleLoginSuccess = (data: { token: string; name: string; email: string; phone?: string }) => {
-        localStorage.setItem("authToken", data.token);
-        localStorage.setItem("authUser", JSON.stringify(data));
-        // Cập nhật state user để header re-render
+    const handleProfileClick = () => {
+        navigate("/profile");
+        setDropdownOpen(false);
+    };
+
+    const handleLoginSuccess = (data: UserSession) => {
+        saveUserSession(data);
         setUser(data);
         setLoginOpen(false);
+        setDropdownOpen(false);
     };
 
-    const handleLogout = () => {
-        localStorage.removeItem("authToken");
-        localStorage.removeItem("authUser");
-        setUser(null);
-        navigate("/"); // về Home
+    const handleLogout = async () => {
+        setLogoutModalOpen(true);
+        try {
+            // Giả lập async logout
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            clearUserSession();
+            setUser(null);
+            setDropdownOpen(false);
+            navigate("/");
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setLogoutModalOpen(false);
+        }
     };
-    const getLastName = (fullName: string): string => {
-        const names = fullName.trim().split(/\s+/); // Tách tên bằng khoảng trắng, loại bỏ khoảng trắng dư thừa
-        return names.length > 0 ? names[names.length - 1] : fullName; // Lấy phần tử cuối cùng, nếu không có tên thì trả về tên đầy đủ
-    };
+
+    const getLastName = (fullName: string) =>
+        fullName.trim().split(/\s+/).slice(-1)[0] || fullName;
 
     return (
-        <header className="sticky top-0 z-50 bg-white/70 backdrop-blur-md shadow-lg border-b border-white/20">
-            <div className="container mx-auto flex items-center justify-between py-4 px-6">
-                <Logo />
-                <div className="hidden md:flex flex-1 px-6">
+        <header className="sticky top-0 z-50 bg-white shadow-md border-b border-gray-100">
+            <div className="container mx-auto flex items-center justify-between py-3 px-4 sm:px-6">
+                <Link to="/" className="flex items-center p-1">
+                    <Logo />
+                </Link>
+
+                <div className="hidden md:flex flex-1 max-w-lg mx-6">
                     <SearchBar />
                 </div>
-                <div className="flex items-center space-x-4">
-                    {/* Icon Giỏ hàng */}
-                    <Link to="/cart" className="relative p-2">
-                        <ShoppingCart className="w-6 h-6 text-gray-700 hover:text-indigo-600 transition" />
-                        {/* Lưu ý: Thay số '3' tĩnh bằng số lượng sản phẩm thực tế trong giỏ hàng */}
-                        <span className="absolute -top-1 -right-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">3</span>
-                    </Link>
 
-                    {/* Icon Yêu thích */}
-                    <button className="p-2">
-                        <Heart className="w-6 h-6 text-gray-700 hover:text-pink-500 transition" />
-                    </button>
+                <div className="flex items-end space-x-3 sm:space-x-5">
+                    <NavIcon to="/" Icon={Home} label="Trang Chủ" title="Về trang chủ" />
+                    <NavIcon to="/wishlist" Icon={Heart} label="Yêu Thích" title="Sản phẩm yêu thích" />
+                    <NavIcon to="/cart" Icon={ShoppingCart} label="Giỏ Hàng" badgeCount={3} title="Xem giỏ hàng" />
 
-                    {/* Logic hiển thị Tên User hoặc Icon Đăng nhập */}
-                    {/* Logic hiển thị Tên User hoặc Icon Đăng nhập */}
                     {user ? (
-                        <div className="group relative">
-                            <button className="flex items-center space-x-1 p-2 border border-transparent rounded-full hover:border-indigo-500 transition duration-300" onClick={handleUserClick}>
-                                <User className="w-6 h-6 text-indigo-600" />
-                                <span className="hidden sm:inline text-sm font-medium text-gray-700 group-hover:text-indigo-600 transition">
-                                    Xin chào, <strong style={{ fontSize: '20px' }}>{getLastName(user.name)} !</strong>  {/* SỬ DỤNG HÀM getLastName MỚI */}
+                        <div className="relative flex flex-col items-center">
+                            <button
+                                className="flex flex-col items-center p-2 group hover:text-indigo-600"
+                                onClick={handleUserClick}
+                                title="Quản lý tài khoản"
+                            >
+                                <User className="w-6 h-6 mb-0.5 text-indigo-600 group-hover:text-indigo-700 transition" />
+                                <span className="text-xs font-medium text-gray-700 hidden sm:inline group-hover:text-indigo-700">
+                                    {getLastName(user.name)}
                                 </span>
                             </button>
 
-                            {/* Dropdown/Menu Đăng xuất */}
-
+                            {dropdownOpen && (
+                                <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden z-50">
+                                    <button
+                                        onClick={handleProfileClick}
+                                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2"
+                                    >
+                                        <User className="w-4 h-4" /> Xem Profile
+                                    </button>
+                                    <hr className="border-gray-100" />
+                                    <button
+                                        onClick={handleLogout}
+                                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                                    >
+                                        <LogOut className="w-4 h-4" /> Đăng Xuất
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     ) : (
-                        // Chưa đăng nhập: Hiện Icon User (click để mở form Login/Register)
-                        <button className="p-2" onClick={handleUserClick}>
-                            <User className="w-6 h-6 text-gray-700 hover:text-indigo-600 transition" />
+                        <button
+                            onClick={handleUserClick}
+                            title="Đăng nhập / Đăng ký"
+                            className="flex flex-col items-center p-2 group hover:text-indigo-600"
+                        >
+                            <User className="w-6 h-6 mb-0.5 text-gray-700 group-hover:text-indigo-600 transition" />
+                            <span className="text-xs font-medium text-gray-500 hidden sm:inline group-hover:text-indigo-600">
+                                Đăng Nhập
+                            </span>
                         </button>
                     )}
 
-                    {/* Nút Menu Mobile */}
-                    <button className="md:hidden p-2" onClick={() => setMenuOpen(!menuOpen)}>
+                    <button
+                        className="md:hidden p-2 rounded-md hover:bg-gray-100 transition"
+                        onClick={() => setMenuOpen(!menuOpen)}
+                    >
                         {menuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
                     </button>
                 </div>
             </div>
 
-            {/* Menu Desktop */}
-            <div className="hidden md:block border-t border-gray-100 bg-white/80">
-                <NavMenu categories={[]} onCategoryClick={() => { }} />
+            <div className="hidden md:block bg-white border-t border-gray-100">
+                <div className="container mx-auto px-4 sm:px-6">
+                    <NavMenu categories={[]} onCategoryClick={() => { }} />
+                </div>
             </div>
 
-            {/* Menu Mobile */}
             {menuOpen && (
-                <div className="md:hidden border-t border-gray-200 bg-white/90">
-                    <NavMenu categories={[]} onCategoryClick={() => { }} />
+                <div className="md:hidden absolute w-full left-0 bg-white shadow-lg border-t border-gray-200 z-40">
+                    <div className="p-4 border-b border-gray-100">
+                        <SearchBar />
+                    </div>
+                    <NavMenu categories={[]} onCategoryClick={() => setMenuOpen(false)} />
                 </div>
             )}
 
-            {/* Modal Login/Register */}
             {loginOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 min-h-screen">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
                     <div className="w-full max-w-md mx-auto">
                         {isRegister ? (
                             <RegisterPage
@@ -149,6 +191,16 @@ const Header: React.FC = () => {
                                 onLoginSuccess={handleLoginSuccess}
                             />
                         )}
+                    </div>
+                </div>
+            )}
+
+            {/* --- Modal Logout --- */}
+            {logoutModalOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white rounded-xl p-6 flex flex-col items-center">
+                        <Loader2 className="w-10 h-10 mb-4 animate-spin text-red-600" />
+                        <span className="text-lg font-semibold text-gray-800">Đang đăng xuất...</span>
                     </div>
                 </div>
             )}

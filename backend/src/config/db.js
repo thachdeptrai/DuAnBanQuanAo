@@ -1,19 +1,25 @@
-// src/config/db.js (hoặc db.mjs)
+// src/config/db.js
+import { Sequelize } from "sequelize";
+import "dotenv/config";
 
-import mysql from "mysql2/promise";
-import "dotenv/config"; // 💡 CÁCH CHUẨN ĐỂ TẢI BIẾN MÔI TRƯỜNG TRONG ES MODULES
+// Kết nối Sequelize tới MySQL
+const sequelize = new Sequelize(
+  process.env.MYSQL_DATABASE, // Tên DB
+  process.env.MYSQL_USER, // User
+  process.env.MYSQL_PASSWORD, // Mật khẩu
+  {
+    host: process.env.MYSQL_HOST || "localhost",
+    dialect: "mysql",
+    logging: false, // tắt log SQL
+  }
+);
 
-// 🚨 LƯU Ý: Không cần gọi require("dotenv").config() hoặc dotenv.config() nữa.
+// Kiểm tra kết nối
+try {
+  await sequelize.authenticate();
+  console.log("✅ Kết nối MySQL thành công!");
+} catch (error) {
+  console.error("❌ Không thể kết nối MySQL:", error);
+}
 
-const pool = mysql.createPool({
-  host: process.env.MYSQL_HOST,
-  user: process.env.MYSQL_USER,
-  password: process.env.MYSQL_PASSWORD,
-  database: process.env.MYSQL_DATABASE,
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
-});
-
-// Sử dụng export default để xuất pool
-export default pool;
+export default sequelize;

@@ -9,7 +9,11 @@ import AuthController from "../controllers/auth.controller.js";
 
 // --- CÁC ROUTE CƠ BẢN ---
 // Giữ nguyên cách gọi AuthController.register
-router.post("/register", AuthController.register);
+// ✅ 1. BƯỚC 1: Gửi yêu cầu đăng ký và OTP
+router.post("/register/request-otp", AuthController.requestOtpForRegistration);
+
+// ✅ 2. BƯỚC 2: Xác thực OTP và tạo tài khoản vĩnh viễn
+router.post("/register/finalize", AuthController.registerWithOtp);
 router.post("/login", AuthController.login);
 
 // --- CÁC ROUTE QUẢN LÝ TÀI KHOẢN ---

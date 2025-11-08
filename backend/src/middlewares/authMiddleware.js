@@ -1,68 +1,66 @@
-// src/middleware/authMiddleware.js (hoặc authMiddleware.mjs)
+import jwt from "jsonwebtoken";
 
-import jwt from "jsonwebtoken"; // Thay require
-
-// Lấy secret key từ biến môi trường.
-// Dùng giá trị mặc định chỉ khi biết chắc chắn biến môi trường không được set.
 const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || "supersecretaccess";
 
-/**
- * Middleware: Yêu cầu xác thực (Authorization Middleware)
- * Kiểm tra header 'Authorization' để xác minh token JWT hợp lệ.
- * @param {object} req - Đối tượng Request
- * @param {object} res - Đối tượng Response
- * @param {function} next - Hàm tiếp tục xử lý
- */
-function requireAuth(req, res, next) {
+// Middleware xác thực chuẩn
+function authMiddleware(req, res, next) {
+  console.log(
+    `[AUTH-MIDDLEWARE DEBUG] Request URL: ${req.method} ${req.originalUrl}`
+  );
+
+  let token;
+
+  // 1. Lấy token từ header "Authorization"
   const authHeader = req.headers["authorization"];
+  console.log(
+    `[AUTH-MIDDLEWARE DEBUG] Authorization Header Received:`,
+    authHeader
+  );
 
-  // 1. Kiểm tra sự tồn tại của header Authorization
-  if (!authHeader) {
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    token = authHeader.split(" ")[1];
+  }
+
+  // 2. Nếu không có header thì thử lấy từ cookie
+  if (!token && req.cookies?.token) {
+    console.log("[AUTH-MIDDLEWARE DEBUG] Token lấy từ cookie");
+    token = req.cookies.token;
+  }
+
+  // 3. Nếu vẫn không có token thì báo lỗi
+  if (!token) {
+    console.error("[AUTH-MIDDLEWARE ERROR] Token missing in header or cookie");
     return res.status(401).json({
-      message: "Thiếu thông tin xác thực (Authorization header missing).",
+      message: "Thiếu token xác thực (Authorization header hoặc cookie).",
     });
   }
 
-  // Kiểm tra định dạng: Phải là "Bearer [token]"
-  const parts = authHeader.split(" ");
-  if (parts.length !== 2 || parts[0] !== "Bearer") {
-    return res.status(401).json({
-      message: 'Định dạng token không hợp lệ. Phải là "Bearer <token>".',
-    });
-  }
-
-  const token = parts[1];
-
-  // 2. Xác minh Token
+  // 4. Xác minh token
   try {
-    // Giải mã token bằng secret key
-    const payload = jwt.verify(token, JWT_ACCESS_SECRET);
+    const decoded = jwt.verify(token, JWT_ACCESS_SECRET);
+    req.user = decoded;
 
-    // Gắn thông tin người dùng (id, role, email) vào request
-    // Các controller tiếp theo có thể truy cập: req.user.id, req.user.role, ...
-    req.user = payload;
+    console.log(
+      `[AUTH-MIDDLEWARE DEBUG] ✅ Token Verified | User ID: ${decoded.id}`
+    );
 
-    // Chuyển sang middleware hoặc controller tiếp theo
     next();
-  } catch (error) {
-    // Xử lý các lỗi JWT cụ thể
-    console.error("JWT Verification Error:", error.message);
+  } catch (err) {
+    console.error(
+      "[AUTH-MIDDLEWARE ERROR] JWT Verification Error:",
+      err.message
+    );
 
     let errorMessage = "Token không hợp lệ.";
 
-    if (error.name === "TokenExpiredError") {
+    if (err.name === "TokenExpiredError") {
       errorMessage = "Token đã hết hạn.";
-    } else if (error.name === "JsonWebTokenError") {
-      errorMessage = "Token bị lỗi hoặc chữ ký không khớp.";
+    } else if (err.name === "JsonWebTokenError") {
+      errorMessage = "Token bị lỗi hoặc chữ ký không hợp lệ.";
     }
 
     return res.status(401).json({ message: errorMessage });
   }
 }
 
-// Export middleware dưới tên authMiddleware (Named Export)
-export { requireAuth as authMiddleware };
-
-// Hoặc nếu bạn muốn export default:
-// export default requireAuth;
-// => Khi đó, ở file khác sẽ import là: import requireAuth from "../middlewares/authMiddleware.js";
+export { authMiddleware };
