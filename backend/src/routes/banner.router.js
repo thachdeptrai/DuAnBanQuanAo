@@ -1,5 +1,10 @@
 import express from "express";
-import { getBanners, createBanner, updateBanner, deleteBanner } from "../controllers/bannerController.js";
+import {
+  getBanners,
+  createBanner,
+  updateBanner,
+  deleteBanner,
+} from "../controllers/bannerController.js";
 import { protect, admin } from "../middleware/authMiddleware.js";
 
 const router = express.Router();

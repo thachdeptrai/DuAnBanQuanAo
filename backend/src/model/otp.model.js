@@ -1,36 +1,52 @@
-// src/model/otp.model.js
-import { DataTypes } from "sequelize";
-import sequelize from "../config/db.js";
+// src/models/otp.model.js
 
-const OTPCode = sequelize.define(
-  "otp_codes",
-  {
-    id: {
-      type: DataTypes.INTEGER,
-      primaryKey: true,
-      autoIncrement: true,
+const OTPModel = (sequelize, DataTypes) => {
+  const OTPCode = sequelize.define(
+    "OtpCode",
+    {
+      id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true,
+      },
+      email: {
+        type: DataTypes.STRING(150),
+        allowNull: false,
+      },
+      code: {
+        type: DataTypes.STRING(6),
+        allowNull: false,
+      },
+      type: {
+        type: DataTypes.ENUM("register", "reset_password"),
+        defaultValue: "register",
+      },
+      used: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+      },
+      created_at: {
+        type: DataTypes.DATE,
+        defaultValue: DataTypes.NOW,
+      },
+      expires_at: {
+        type: DataTypes.DATE,
+        allowNull: false,
+        defaultValue: () => new Date(Date.now() + 5 * 60 * 1000),
+      },
     },
-    email: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    code: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    created_at: {
-      type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW,
-    },
-    expires_at: {
-      type: DataTypes.DATE,
-      allowNull: false,
-    },
-  },
-  {
-    timestamps: false,
-    tableName: "otp_codes",
-  }
-);
+    {
+      tableName: "otp_codes",
+      timestamps: false,
+      indexes: [
+        { fields: ["email", "type"] },
+        { fields: ["expires_at", "used"] },
+        { fields: ["created_at"] },
+      ],
+    }
+  );
 
-export default OTPCode;
+  return OTPCode;
+};
+
+export default OTPModel;

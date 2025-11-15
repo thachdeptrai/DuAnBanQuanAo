@@ -1,63 +1,111 @@
 // src/app.js
+import dotenv from "dotenv";
+dotenv.config();
 
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import path from "path";
+import { fileURLToPath } from "url";
 
 import authRoutes from "./routes/auth.routes.js";
-import categoryRoutes from "./routes/categoryRoutes.js";
-import productRoutes from "./routes/productRoutes.js";
+import productRoutes from "./routes/produc.router.js";
 import cartRoutes from "./routes/cartRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
 import userRoutes from "./routes/user.router.js";
 import otpRouter from "./routes/otp.router.js";
+import brandRouter from "./routes/brand.router.js";
 
+// Sequelize
 import sequelize from "./config/db.js";
+import models from "./model/init.js";
+import { setupAssociations } from "./model/associations.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// ================= DEBUG GLOBAL =================
-app.use((req, res, next) => {
-  console.log(
-    `\n--- [GLOBAL DEBUG START] Request: ${req.method} ${req.url} ---`
-  );
-  console.log("Headers:", JSON.stringify(req.headers, null, 2));
-  console.log("--- [GLOBAL DEBUG END] ---\n");
-  next();
-});
-// =================================================
+// ================== CORS ==================
+const allowedOrigins = ["http://localhost:5173", "http://localhost:3000"];
 
-// ================== CORS CONFIG ==================
 const corsOptions = {
-  origin: "http://localhost:3000",
+  origin: allowedOrigins,
   credentials: true,
-  allowedHeaders: ["Content-Type", "Authorization"],
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
 };
-
 app.use(cors(corsOptions));
-// =================================================
-
-app.use(express.json());
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(cookieParser());
 
-// ====================== ROUTES ======================
-app.use("/api/categories", categoryRoutes);
-app.use("/api/products", productRoutes);
-app.use("/api/cart", cartRoutes);
-app.use("/api/orders", orderRoutes);
+// Logging
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  next();
+});
+
+// ================== DATABASE ==================
+const initializeDatabase = async () => {
+  try {
+    console.log("🔄 Initializing database...");
+
+    // associations dùng models từ init.js
+    setupAssociations(models);
+
+    await sequelize.authenticate();
+    console.log("✅ Database connection established!");
+
+    await sequelize.sync({ alter: true });
+    console.log("✅ Database synchronized!");
+  } catch (error) {
+    console.error("❌ Database initialization failed:", error);
+    process.exit(1);
+  }
+};
+console.log("JWT_ACCESS_SECRET:", process.env.JWT_ACCESS_SECRET);
+
+// ================== ROUTES ==================
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/otp", otpRouter);
+app.use("/api/products", productRoutes);
+app.use("/api/cart", cartRoutes);
+app.use("/api/orders", orderRoutes);
+app.use("/api/brands", brandRouter);
 
-// Test API
-app.get("/", (req, res) => res.json({ message: "API running" }));
-// =====================================================
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// ✅ Sync database
-sequelize
-  .sync({ alter: true })
-  .then(() => console.log("✅ All models synchronized successfully."))
-  .catch((err) => console.error("❌ Error syncing models:", err));
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({
+    message: "Route not found",
+    path: req.path,
+    method: req.method,
+  });
+});
+
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error("💥 Global Error:", err);
+
+  res.status(err.status || 500).json({
+    message: err.message || "Internal Server Error",
+  });
+});
+
+// ================== SERVER ==================
+const PORT = process.env.PORT || 3000;
+
+export const startServer = async () => {
+  await initializeDatabase();
+
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+  });
+};
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+  startServer();
+}
 
 export default app;

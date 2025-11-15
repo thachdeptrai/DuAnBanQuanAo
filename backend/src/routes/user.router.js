@@ -1,28 +1,49 @@
-// src/routes/user.route.js (hoặc user.route.mjs)
-
+// routes/user.routes.js
 import express from "express";
+import {
+  authMiddleware,
+  userMiddleware,
+  adminMiddleware,
+} from "../middlewares/authMiddleware.js";
+import UserController from "../controllers/user.controller.js";
+
 const router = express.Router();
 
-// 1. Import Middleware (Named Import)
-import { authMiddleware } from "../middlewares/authMiddleware.js";
+// ==================================================
+// 🔹 USER ROUTES (cần token + role = customer)
+// ==================================================
+router.get(
+  "/profile",
+  authMiddleware,
+  userMiddleware,
+  UserController.getProfile
+);
+router.put(
+  "/profile",
+  authMiddleware,
+  userMiddleware,
+  UserController.updateProfile
+);
 
-// 2. Import Controller (Named Import)
-// Giả định user.controller.js sử dụng Named Exports (export const getUserInfo = ...)
-import {
-  getUserInfo,
-  updateUser,
-  deleteUser,
-} from "../controllers/user.controller.js"; // Nhớ thêm đuôi .js
+router.put(
+  "/change-password",
+  authMiddleware,
+  userMiddleware,
+  UserController.changePassword
+);
 
-// =======================================================
-// Route lấy thông tin người dùng (cần login)
-router.get("/me", authMiddleware, getUserInfo);
+router.delete(
+  "/account",
+  authMiddleware,
+  userMiddleware,
+  UserController.deleteAccount
+);
 
-// Route cập nhật thông tin người dùng (chỉ chính mình)
-router.put("/me", authMiddleware, updateUser);
+router.get(
+  "/statistics",
+  authMiddleware,
+  userMiddleware,
+  UserController.getStatistics
+);
 
-// Route xóa người dùng (chỉ chính mình, yêu cầu password xác nhận)
-router.delete("/me", authMiddleware, deleteUser);
-
-// Thay thế module.exports = router;
 export default router;
