@@ -986,12 +986,6 @@ class AuthController {
         .json({ message: "Lỗi hệ thống khi lấy thống kê." });
     }
   }
-  // src/controllers/auth.controller.js (trong AuthController class)
-
-  // =========================================================
-  // 🔹 ADMIN: CẤM/BỎ CẤM USER (BAN/UNBAN) - Sử dụng ENUM: active, inactive, deleted
-  // =========================================================
-  // src/controllers/auth.controller.js (trong AuthController class)
 
   // =========================================================
   // 🔹 ADMIN: CẤM/BỎ CẤM USER (BAN/UNBAN) - Đồng bộ với ENUM: active, inactive

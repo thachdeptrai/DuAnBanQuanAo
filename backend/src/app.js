@@ -15,6 +15,12 @@ import orderRoutes from "./routes/orderRoutes.js";
 import userRoutes from "./routes/user.router.js";
 import otpRouter from "./routes/otp.router.js";
 import brandRouter from "./routes/brand.router.js";
+import categoryRoutes from "./routes/category.routes.js";
+import attributeRouter from "./routes/attribute.router.js";
+import attributeValueRoutes from "./routes/attribute_values.router.js";
+import productVariantRoutes from "./routes/productVariant.routes.js";
+import variantAttributeRoutes from "./routes/variantAttribute.routes.js";
+import productMediaRoutes from "./routes/productMedia.routes.js";
 
 // Sequelize
 import sequelize from "./config/db.js";
@@ -72,6 +78,13 @@ app.use("/api/products", productRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/brands", brandRouter);
+app.use("/api/categories", categoryRoutes);
+app.use("/api/attributes", attributeRouter);
+app.use("/api/attribute-values", attributeValueRoutes);
+app.use("/api/variant-attributes", variantAttributeRoutes);
+app.use("/api/product-media", productMediaRoutes);
+
+app.use("/api/product-variants", productVariantRoutes);
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
