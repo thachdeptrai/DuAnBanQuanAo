@@ -41,6 +41,7 @@ console.log("🚀 API_BASE_URL =", API_BASE_URL);
  * 3️⃣ ĐỊNH NGHĨA KIỂU DỮ LIỆU CHUNG
  * ---------------------------------------------------- */
 export interface ApiResponse<T = any> {
+  error: any;
   success: boolean;
   message: string;
   details?: string[];
@@ -69,11 +70,12 @@ const handleResponse = async <T>(response: Response): Promise<ApiResponse<T>> =>
     if (response.status === 401) {
       clearUserSession();
       console.warn("🔒 Token hết hạn hoặc không hợp lệ — đã xóa session cục bộ.");
-      
+
     }
 
     return {
       success: false,
+      error: data?.error ?? true,
       message,
       details: data?.details || [],
       data: data?.data || null,
@@ -82,6 +84,7 @@ const handleResponse = async <T>(response: Response): Promise<ApiResponse<T>> =>
 
   return {
     success: true,
+    error: null,
     message: data?.message || "Thành công.",
     data: data?.data ?? data,
   };
@@ -123,6 +126,7 @@ export const apiClient = async <T>(
     console.error("🌐 Lỗi mạng:", error);
     return {
       success: false,
+      error: true,
       message: "Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng.",
       details: [],
     };

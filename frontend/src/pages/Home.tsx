@@ -5,44 +5,71 @@ import HeroBanner from "../components/Hero/HeroBanner";
 import Footer from "../components/Footer/Footer";
 import CategorySection from "../components/Category/CategoryGrid";
 import ProductGrid from "../components/Product/ProductGrid";
-import Logo from "../components/Header/Logo";
-
-interface Category {
-    id: string;
-    name: string;
-    image?: string;
-    product_count?: number;
-}
-
-const dummyCategories: Category[] = [
-    { id: "1", name: "Áo Thun", image: "/images/tshirt.jpg", product_count: 25 },
-    { id: "2", name: "Quần Jean", image: "/images/jeans.jpg", product_count: 18 },
-    { id: "3", name: "Áo Khoác", image: "/images/jacket.jpg", product_count: 12 },
-    { id: "4", name: "Giày Dép", image: "/images/shoes.jpg", product_count: 30 },
-];
+import { getAllCategories } from "../NetWork/category.api"; // 🟢 import API
+import type { Category } from "../NetWork/category.api"; // 🟢 import type
 
 const Home: React.FC = () => {
     const [categories, setCategories] = useState<Category[]>([]);
+    const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
+    // 🟡 Gọi API lấy danh mục
     useEffect(() => {
-        setCategories(dummyCategories);
+        const fetchCategories = async () => {
+            try {
+                const res = await getAllCategories();
+
+                if (res.success && Array.isArray(res.data)) {
+                    // Chuẩn hóa dữ liệu cho UI nếu cần
+                    const formatted = res.data.map((item) => ({
+                        id: item.id, // 🟢 để nguyên kiểu number
+                        name: item.name,
+                        slug: item.slug || item.name.toLowerCase().replace(/\s+/g, "-"),
+                        image: item.image_url
+                            ? `${import.meta.env.VITE_API_URL}${item.image_url}`
+                            : "/images/placeholder.jpg",
+                        product_count: Math.floor(Math.random() * 50) + 1,
+                    }));
+
+
+
+                    setCategories(formatted);
+                } else {
+                    console.warn("⚠️ Không lấy được danh mục:", res.message);
+                }
+            } catch (error) {
+                console.error("❌ Lỗi khi gọi API danh mục:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchCategories();
     }, []);
 
-    const handleCategoryClick = (id: string) => {
+    // 🟢 Khi click vào danh mục
+    const handleCategoryClick = (id: Number) => {
         navigate(`/category/${id}`);
     };
-
 
     return (
         <div className="min-h-screen bg-white">
             <Header />
-            <HeroBanner images={[
+            <HeroBanner images={[]} />
 
-            ]} />
-            <CategorySection categories={categories} onCategoryClick={handleCategoryClick} />
+            {/* 🟢 Loading state */}
+            {loading ? (
+                <div className="text-center py-20 text-gray-500 text-lg">
+                    Đang tải danh mục...
+                </div>
+            ) : (
+                <CategorySection
+                    categories={categories}
+                    onCategoryClick={handleCategoryClick}
+                />
+            )}
+
             <ProductGrid />
-
             <Footer />
         </div>
     );

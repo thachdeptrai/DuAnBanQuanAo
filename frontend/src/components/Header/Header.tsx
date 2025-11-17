@@ -6,8 +6,10 @@ import { Link, useNavigate } from "react-router-dom";
 import NavMenu from "./NavMenu";
 import Logo from "./Logo";
 import SearchBar from "./SearchBar";
-import LoginPage from "../Login/Login";
-import RegisterPage from "../Register/RegisterPage";
+import LoginPage from "../Auth/Login";
+import RegisterPage from "../Auth/RegisterPage";
+import ForgotPasswordPage from "../Auth/ForgotPasswordPage"; // ✅ Thêm import
+import ResetPasswordPage from "../Auth/ResetPasswordPage"; // ✅ Thêm import
 
 import { getUserSession, saveUserSession, clearUserSession, type UserSession } from "../../utils/session";
 
@@ -37,14 +39,17 @@ const NavIcon: React.FC<NavIconProps> = ({ to, Icon, label, badgeCount, title })
     </Link>
 );
 
+// ✅ Định nghĩa type cho auth modal
+type AuthModalType = "login" | "register" | "forgotPassword" | "resetPassword" | null;
+
 const Header: React.FC = () => {
     const navigate = useNavigate();
     const [menuOpen, setMenuOpen] = useState(false);
-    const [loginOpen, setLoginOpen] = useState(false);
-    const [isRegister, setIsRegister] = useState(false);
+    const [authModal, setAuthModal] = useState<AuthModalType>(null); // ✅ Dùng 1 state cho tất cả modal
     const [user, setUser] = useState<UserSession | null>(null);
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [logoutModalOpen, setLogoutModalOpen] = useState(false);
+    const [emailForReset, setEmailForReset] = useState<string>(""); // ✅ Email cho reset password
 
     useEffect(() => {
         setUser(getUserSession());
@@ -56,8 +61,7 @@ const Header: React.FC = () => {
         const current = getUserSession();
         if (current) toggleDropdown();
         else {
-            setIsRegister(false);
-            setLoginOpen(true);
+            setAuthModal("login");
         }
     };
 
@@ -66,17 +70,34 @@ const Header: React.FC = () => {
         setDropdownOpen(false);
     };
 
-    const handleLoginSuccess = (data: UserSession) => {
-        saveUserSession(data);
-        setUser(data);
-        setLoginOpen(false);
+    const handleLoginSuccess = (data: { token: string; name: string; email: string; phone?: string; role: string; id: string | number }) => {
+        const sessionData: UserSession = {
+            ...data,
+            role: (data.role === "customer" || data.role === "admin" ? data.role : "customer") as "customer" | "admin"
+        };
+        saveUserSession(sessionData);
+        setUser(sessionData);
+        setAuthModal(null); // ✅ Đóng modal sau khi login thành công
         setDropdownOpen(false);
+    };
+
+    // ✅ Hàm chuyển đổi giữa các modal
+    const handleSwitchToRegister = () => setAuthModal("register");
+    const handleSwitchToLogin = (email?: string) => setAuthModal("login");
+    const handleSwitchToForgotPassword = () => setAuthModal("forgotPassword");
+    const handleSwitchToResetPassword = (email: string) => {
+        setEmailForReset(email);
+        setAuthModal("resetPassword");
+    };
+
+    const handleCloseAuthModal = () => {
+        setAuthModal(null);
+        setEmailForReset("");
     };
 
     const handleLogout = async () => {
         setLogoutModalOpen(true);
         try {
-            // Giả lập async logout
             await new Promise(resolve => setTimeout(resolve, 1000));
             clearUserSession();
             setUser(null);
@@ -91,6 +112,54 @@ const Header: React.FC = () => {
 
     const getLastName = (fullName: string) =>
         fullName.trim().split(/\s+/).slice(-1)[0] || fullName;
+
+    // ✅ Render auth modal dựa trên state
+    const renderAuthModal = () => {
+        if (!authModal) return null;
+
+        const handleBackdropClick = (e: React.MouseEvent) => {
+            if (e.target === e.currentTarget) {
+                handleCloseAuthModal();
+            }
+        };
+
+        return (
+            <div
+                className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+                onClick={handleBackdropClick}
+            >
+                <div onClick={(e) => e.stopPropagation()}>
+                    {authModal === "login" && (
+                        <LoginPage
+                            onClose={handleCloseAuthModal}
+                            onSwitchToRegister={handleSwitchToRegister}
+                            onSwitchToForgotPassword={handleSwitchToForgotPassword}
+                            onLoginSuccess={handleLoginSuccess}
+                        />
+                    )}
+                    {authModal === "register" && (
+                        <RegisterPage
+                            onClose={handleCloseAuthModal}
+                            onSwitchToLogin={handleSwitchToLogin}
+                        />
+                    )}
+                    {authModal === "forgotPassword" && (
+                        <ForgotPasswordPage
+                            onClose={handleCloseAuthModal}
+                            onSwitchToLogin={handleSwitchToLogin} // ✅ Thay đổi từ onSwitchToReset
+                        />
+                    )}
+                    {authModal === "resetPassword" && emailForReset && (
+                        <ResetPasswordPage
+                            email={emailForReset}
+                            onClose={handleCloseAuthModal}
+                            onSwitchToLogin={handleSwitchToLogin}
+                        />
+                    )}
+                </div>
+            </div>
+        );
+    };
 
     return (
         <header className="sticky top-0 z-50 bg-white shadow-md border-b border-gray-100">
@@ -134,7 +203,10 @@ const Header: React.FC = () => {
                                         onClick={handleLogout}
                                         className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
                                     >
-                                        <LogOut className="w-4 h-4" /> Đăng Xuất
+                                        <LogOut className="w-4 h-4" /> đăng xuất
+                                        <div className="ml-auto animate-pulse text-xs font-medium text-red-600">
+                                            !
+                                        </div>
                                     </button>
                                 </div>
                             )}
@@ -176,24 +248,8 @@ const Header: React.FC = () => {
                 </div>
             )}
 
-            {loginOpen && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-                    <div className="w-full max-w-md mx-auto">
-                        {isRegister ? (
-                            <RegisterPage
-                                onClose={() => setLoginOpen(false)}
-                                onSwitchToLogin={() => setIsRegister(false)}
-                            />
-                        ) : (
-                            <LoginPage
-                                onClose={() => setLoginOpen(false)}
-                                onSwitchToRegister={() => setIsRegister(true)}
-                                onLoginSuccess={handleLoginSuccess}
-                            />
-                        )}
-                    </div>
-                </div>
-            )}
+            {/* ✅ Render auth modal */}
+            {renderAuthModal()}
 
             {/* --- Modal Logout --- */}
             {logoutModalOpen && (

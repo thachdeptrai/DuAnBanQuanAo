@@ -8,7 +8,6 @@ import ProductDetailPage from "./pages/ProductDeltaiPage";
 
 import CartPage from "./pages/CartPage";
 import ProfilePage from "./pages/ProfilePage";
-import { LogIn } from "lucide-react";
 
 
 function App() {

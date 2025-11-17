@@ -6,14 +6,14 @@ import type { ApiResponse } from "./apiClient";
  * Interface cho dữ liệu người dùng cơ bản (trừ mật khẩu)
  */
 export interface UserProfile {
-    id: number;
+    id: string;
     name: string;
     email: string;
     phone: string | null;
     address: string | null;
     avatar: string | null;
     role: 'customer' | 'admin';
-    status: 'active' | 'banned' | 'pending';
+    status: 'active' | 'deleted' | 'pending';
     created_at: string;
     updated_at: string;
 }
@@ -22,10 +22,19 @@ export interface UserProfile {
  * Interface cho dữ liệu cần thiết khi cập nhật
  */
 export interface UpdateUserData {
-    name?: string  | null;
+    name?: string;
     phone?: string | null;
     address?: string | null;
     avatar?: string | null;
+    email?: string;
+}
+
+/**
+ * Interface cho đổi mật khẩu
+ */
+export interface ChangePasswordData {
+    oldPassword: string;
+    newPassword: string;
 }
 
 /**
@@ -35,15 +44,24 @@ export interface DeleteSelfPayload {
     password: string;
 }
 
+/**
+ * Interface cho thống kê user
+ */
+export interface UserStatistics {
+    orders: number;
+    cartItems: number;
+    wishlistItems: number;
+}
+
 // ==========================================================
-// A. THAO TÁC CÁ NHÂN (PROFILE)
+// A. THAO TÁC CÁ NHÂN (PROFILE) - SỬA ENDPOINT CHO ĐÚNG
 // ==========================================================
 
 /**
  * Lấy thông tin cá nhân của người dùng hiện tại
  */
 export const getProfile = (): Promise<ApiResponse<UserProfile>> => {
-    return apiClient<UserProfile>('/users/me', {
+    return apiClient<UserProfile>('/users/profile', { // SỬA: /users/me -> /users/profile
         method: 'GET',
     });
 };
@@ -52,7 +70,18 @@ export const getProfile = (): Promise<ApiResponse<UserProfile>> => {
  * Cập nhật thông tin cá nhân của người dùng hiện tại
  */
 export const updateProfile = (data: UpdateUserData): Promise<ApiResponse<UserProfile>> => {
-    return apiClient<UserProfile>('/users/me', {
+    return apiClient<UserProfile>('/users/profile', { // SỬA: /users/me -> /users/profile
+        method: 'PUT',
+        body: data,
+    });
+};
+
+/**
+ * Đổi mật khẩu người dùng hiện tại
+ */
+// src/api/user.api.ts
+export const changePassword = (data: ChangePasswordData): Promise<ApiResponse<null>> => {
+    return apiClient<null>('/users/change-password', {
         method: 'PUT',
         body: data,
     });
@@ -63,9 +92,18 @@ export const updateProfile = (data: UpdateUserData): Promise<ApiResponse<UserPro
  * @param data Object chứa { password } để xác nhận
  */
 export const deleteSelfAccount = (data: DeleteSelfPayload): Promise<ApiResponse<null>> => {
-    return apiClient<null>('/users/me', {
+    return apiClient<null>('/users/account', { // SỬA: /users/me -> /users/account
         method: 'DELETE',
         body: data,
+    });
+};
+
+/**
+ * Lấy thống kê của người dùng hiện tại (số đơn hàng, giỏ hàng, wishlist)
+ */
+export const getUserStatistics = (): Promise<ApiResponse<UserStatistics>> => {
+    return apiClient<UserStatistics>('/users/statistics', { // SỬA: /users/me/statistics -> /users/statistics
+        method: 'GET',
     });
 };
 
@@ -77,7 +115,7 @@ export const deleteSelfAccount = (data: DeleteSelfPayload): Promise<ApiResponse<
  * Lấy danh sách tất cả người dùng (Admin-only)
  */
 export const getAllUsers = (): Promise<ApiResponse<UserProfile[]>> => {
-    return apiClient<UserProfile[]>('/users', {
+    return apiClient<UserProfile[]>('/admin/users', {
         method: 'GET',
     });
 };
@@ -86,8 +124,18 @@ export const getAllUsers = (): Promise<ApiResponse<UserProfile[]>> => {
  * Lấy thông tin chi tiết một người dùng bằng ID (Admin-only)
  */
 export const getUserDetails = (userId: number | string): Promise<ApiResponse<UserProfile>> => {
-    return apiClient<UserProfile>(`/users/${userId}`, {
+    return apiClient<UserProfile>(`/admin/users/${userId}`, {
         method: 'GET',
+    });
+};
+
+/**
+ * Admin cập nhật thông tin người dùng bằng ID
+ */
+export const updateUserById = (userId: number | string, data: UpdateUserData): Promise<ApiResponse<UserProfile>> => {
+    return apiClient<UserProfile>(`/admin/users/${userId}`, {
+        method: 'PUT',
+        body: data,
     });
 };
 
@@ -95,7 +143,7 @@ export const getUserDetails = (userId: number | string): Promise<ApiResponse<Use
  * Admin xóa một người dùng bằng ID
  */
 export const deleteUserById = (userId: number | string): Promise<ApiResponse<null>> => {
-    return apiClient<null>(`/users/${userId}`, {
+    return apiClient<null>(`/admin/users/${userId}`, {
         method: 'DELETE',
     });
 };

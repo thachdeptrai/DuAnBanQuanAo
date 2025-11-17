@@ -1,16 +1,10 @@
 import { ChevronRight } from "lucide-react";
 import React from "react";
-
-interface Category {
-  id: string;
-  name: string;
-  image?: string;
-  product_count?: number;
-}
+import type { Category as ApiCategory } from "../../NetWork/category.api";
 
 interface Props {
-  categories: Category[];
-  onCategoryClick: (id: string) => void;
+  categories: ApiCategory[];
+  onCategoryClick: (id: number) => void;
 }
 
 const CategorySection: React.FC<Props> = ({ categories = [], onCategoryClick }) => {
@@ -30,7 +24,7 @@ const CategorySection: React.FC<Props> = ({ categories = [], onCategoryClick }) 
         <p className="text-gray-600 text-lg">Khám phá bộ sưu tập đa dạng của chúng tôi</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
         {categories.length === 0 ? (
           <p className="text-center text-gray-500 col-span-4">Chưa có danh mục nào</p>
         ) : (
@@ -38,23 +32,23 @@ const CategorySection: React.FC<Props> = ({ categories = [], onCategoryClick }) 
             <div
               key={category.id}
               onClick={() => onCategoryClick(category.id)}
-              className="group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-all cursor-pointer transform hover:-translate-y-2"
+              className="group relative rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-transform duration-300 cursor-pointer transform hover:-translate-y-2"
             >
-              <div
-                className={`bg-gradient-to-br ${colors[index % colors.length]} h-64 p-6 flex flex-col justify-end relative`}
-              >
-                {category.image && (
+              {/* Background Gradient + Ảnh */}
+              <div className={`h-64 bg-gradient-to-br ${colors[index % colors.length]} relative`}>
+                {category.image_url && (
                   <img
-                    src={category.image}
+                    src={category.image_url}
                     alt={category.name}
-                    className="absolute inset-0 w-full h-full object-cover"
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                   />
                 )}
-                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-all"></div>
-                <div className="relative z-10 text-white">
-                  <h3 className="text-2xl font-bold mb-2">{category.name}</h3>
-                  <p className="text-white/90 mb-4">{category.product_count || 0}+ sản phẩm</p>
-                  <button className="bg-white text-gray-800 px-6 py-2 rounded-full font-semibold hover:bg-gray-100 transition-all inline-flex items-center space-x-2 group-hover:scale-105">
+                {/* Overlay mờ giúp chữ nổi */}
+                <div className="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-all duration-300"></div>
+                {/* Nội dung */}
+                <div className="absolute bottom-4 left-4 right-4 z-10 text-white">
+                  <h3 className="text-xl sm:text-2xl font-bold mb-2 drop-shadow-lg">{category.name}</h3>
+                  <button className="bg-white text-gray-800 px-5 py-2 rounded-full font-semibold hover:bg-gray-100 transition-all inline-flex items-center space-x-2 drop-shadow-md group-hover:scale-105">
                     <span>Xem Thêm</span>
                     <ChevronRight className="w-4 h-4" />
                   </button>

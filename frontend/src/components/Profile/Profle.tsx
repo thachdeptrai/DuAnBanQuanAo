@@ -1,19 +1,24 @@
 "use client";
 import React, { useEffect, useState } from "react";
-// Import các hàm API thực tế bạn đã cung cấp
-import { getProfile, updateProfile } from "../../NetWork/user.api";
-import type { UserProfile, UpdateUserData } from "../../NetWork/user.api";
-import { changePassword, logout } from "../../NetWork/auth.api";
+// Trong component Profile.tsx, sửa import:
+import {
+    getProfile,
+    updateProfile,
+    changePassword,
+    getUserStatistics
+} from "../../NetWork/user.api";
+import type {
+    UserProfile,
+    UpdateUserData,
+    ChangePasswordData,
+    UserStatistics
+} from "../../NetWork/user.api";
+import { logout } from "../../NetWork/auth.api";
 import { useNavigate } from "react-router-dom";
-// ⚠️ Cần IMPORT hàm clearUserSession để đảm bảo logic Logout/Change Password hoàn chỉnh
 import { clearUserSession, getUserSession } from "../../utils/session";
-import { LogOut, Edit, Key, X, CheckCircle, AlertTriangle, Loader2, ShoppingCart } from "lucide-react";
+import { LogOut, Edit, Key, X, CheckCircle, AlertTriangle, Loader2, ShoppingCart, Package, Heart } from "lucide-react";
 
-// --- Component Modal cơ bản (ĐÃ CẬP NHẬT CSS) ---
-// Giữ nguyên component Modal, InfoField và InputField đã được bạn cung cấp.
-// ... (Modal, InfoField, InputField code here) ...
-// ----------------------------------------------------
-
+// --- Component Modal cơ bản ---
 interface ModalProps {
     title: string;
     isOpen: boolean;
@@ -27,15 +32,14 @@ const Modal: React.FC<ModalProps> = ({ title, isOpen, onClose, children, classNa
 
     return (
         <div
-            className="fixed inset-0 bg-black bg-opacity-70 z-50 flex justify-center items-center p-4 backdrop-blur-sm" // Nền tối hơn và blur nhẹ
+            className="fixed inset-0 bg-black bg-opacity-70 z-50 flex justify-center items-center p-4 backdrop-blur-sm"
             onClick={onClose}
         >
             <div
-                className={`bg-white rounded-2xl shadow-2xl w-full max-w-lg transform transition-all duration-500 ease-out scale-100 opacity-100 ${className}`} // Bo góc lớn hơn, hiệu ứng chuyển động mượt hơn
+                className={`bg-white rounded-2xl shadow-2xl w-full max-w-lg transform transition-all duration-500 ease-out scale-100 opacity-100 ${className}`}
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100">
-                    {/* CĂN GIỮA TIÊU ĐỀ và NỔI BẬT */}
                     <h3 className="text-2xl font-bold text-indigo-700 mx-auto">{title}</h3>
                     <button
                         onClick={onClose}
@@ -90,12 +94,18 @@ const InputField: React.FC<InputFieldProps> = ({ label, value, onChange, type, p
 
 const Profile: React.FC = () => {
     const [user, setUser] = useState<UserProfile | null>(null);
+    const [statistics, setStatistics] = useState<UserStatistics | null>(null);
     const [loading, setLoading] = useState(true);
+    const [statsLoading, setStatsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [editMode, setEditMode] = useState(false);
     const [passwordMode, setPasswordMode] = useState(false);
     const [editData, setEditData] = useState<UpdateUserData>({});
-    const [passwords, setPasswords] = useState({ oldPassword: "", newPassword: "", confirmPassword: "" });
+    const [passwords, setPasswords] = useState<ChangePasswordData & { confirmPassword: string }>({
+        oldPassword: "",
+        newPassword: "",
+        confirmPassword: ""
+    });
 
     const [message, setMessage] = useState<string | null>(null);
     const [messageType, setMessageType] = useState<'success' | 'error' | null>(null);
@@ -105,10 +115,9 @@ const Profile: React.FC = () => {
     const [passwordMessage, setPasswordMessage] = useState<string | null>(null);
     const [passwordMessageType, setPasswordMessageType] = useState<'success' | 'error' | null>(null);
 
-
     const navigate = useNavigate();
 
-    // Hàm đặt thông báo chung (sau khi đóng modal)
+    // Hàm đặt thông báo chung
     const setAppMessage = (msg: string | null, type: 'success' | 'error' | null = null) => {
         setMessage(msg);
         setMessageType(type);
@@ -124,71 +133,56 @@ const Profile: React.FC = () => {
     const setPasswordModalMessage = (msg: string | null, type: 'success' | 'error' | null = null) => {
         setPasswordMessage(msg);
         setPasswordMessageType(type);
-
-        if (msg && type === 'success') {
-            // 💡 CHỈNH SỬA LOGIC Ở ĐÂY: Dọn dẹp session ngay lập tức khi đổi mật khẩu thành công.
-            setTimeout(() => {
-                clearUserSession(); // XÓA SESSION CŨ
-                setPasswordMessage(null);
-                setPasswordMessageType(null);
-                setPasswordMode(false);
-                setAppMessage("Đổi mật khẩu thành công! Vui lòng đăng nhập lại.", 'success');
-
-                // Chuyển hướng người dùng sau khi đổi mật khẩu thành công
-                setTimeout(() => {
-                    navigate("/", { replace: true });
-                }, 500);
-            }, 1500);
-        }
     };
 
-
-    // Lấy thông tin người dùng
+    // Lấy thông tin người dùng và thống kê
     useEffect(() => {
-        const fetchProfile = async () => {
+        const fetchUserData = async () => {
             try {
                 setLoading(true);
-                // ⚠️ Bỏ các bước xóa local storage "authToken" và "authUser" trong hàm Logout.
-                // Việc xóa session đã được xử lý bởi `clearUserSession()` trong `session.ts` 
-                // và `apiClient.ts` (khi gặp lỗi 401).
-                const res = await getProfile();
-                if (res.success && res.data) {
-                    setUser(res.data);
-                    // Khởi tạo editData: Chuyển null thành "" để input không báo lỗi
+                const [profileRes, statsRes] = await Promise.all([
+                    getProfile(),
+                    getUserStatistics()
+                ]);
+
+                if (profileRes.success && profileRes.data) {
+                    setUser(profileRes.data);
                     setEditData({
-                        name: res.data.name || "",
-                        phone: res.data.phone || "",
-                        address: res.data.address || "",
-                        avatar: res.data.avatar || "",
+                        name: profileRes.data.name || "",
+                        phone: profileRes.data.phone || "",
+                        address: profileRes.data.address || "",
+                        avatar: profileRes.data.avatar || "",
                     });
                 } else {
-                    setError(res.message || "Không lấy được thông tin người dùng. Vui lòng đăng nhập lại.");
+                    setError(profileRes.message || "Không lấy được thông tin người dùng.");
+                }
+
+                if (statsRes.success && statsRes.data) {
+                    setStatistics(statsRes.data);
                 }
             } catch (err: any) {
-                console.error(err);
+                console.error("Lỗi khi tải dữ liệu:", err);
                 setError(err?.message || "Lỗi khi tải thông tin người dùng.");
             } finally {
                 setLoading(false);
+                setStatsLoading(false);
             }
         };
-        fetchProfile();
+        fetchUserData();
     }, []);
 
     // Logout
     const handleLogout = async () => {
         setIsLoggingOut(true);
         try {
-            await logout(); // Gọi API logout để hủy token trên server (nếu có)
-        } catch {
-            // Bỏ qua lỗi logout
-        }
-
-        // 💡 SỬ DỤNG clearUserSession()
-        setTimeout(() => {
-            clearUserSession(); // Dùng hàm tiện ích từ session.ts
+            await logout();
+        } catch (error) {
+            console.error("Lỗi logout:", error);
+        } finally {
+            clearUserSession();
             setIsLoggingOut(false);
-            navigate("/", { replace: true }); // Chuyển hướng đến trang chính
-        }, 1000);
+            navigate("/", { replace: true });
+        }
     };
 
     // Cập nhật thông tin
@@ -197,26 +191,31 @@ const Profile: React.FC = () => {
         setIsUpdating(true);
         try {
             const dataToSend: UpdateUserData = {};
-            // Logic chuẩn hóa data: gửi null nếu người dùng để trống
-            for (const key in editData) {
-                const field = key as keyof UpdateUserData;
-                const value = editData[field];
-                if (value === "") {
-                    dataToSend[field] = null;
-                } else if (value !== undefined) {
-                    dataToSend[field] = value;
-                }
+
+            // Chuẩn hóa dữ liệu: gửi undefined nếu người dùng để trống (tương thích với kiểu string | undefined)
+            if (editData.name !== undefined) {
+                dataToSend.name = editData.name.trim() === "" ? undefined : editData.name;
+            }
+            if (editData.phone !== undefined) {
+                dataToSend.phone = editData.phone?.trim() === "" ? undefined : editData.phone;
+            }
+            if (editData.address !== undefined) {
+                dataToSend.address = editData.address?.trim() === "" ? undefined : editData.address;
+            }
+            if (editData.avatar !== undefined) {
+                dataToSend.avatar = editData.avatar?.trim() === "" ? undefined : editData.avatar;
             }
 
             const res = await updateProfile(dataToSend);
             if (res.success && res.data) {
                 setUser(res.data);
                 setEditMode(false);
-                setAppMessage(res.message || "Cập nhật thông tin thành công! 🎉", 'success');
+                setAppMessage("Cập nhật thông tin thành công! 🎉", 'success');
             } else {
                 setAppMessage(res.message || "Cập nhật thất bại.", 'error');
             }
         } catch (err: any) {
+            console.error("Lỗi cập nhật profile:", err);
             setAppMessage(err?.message || "Lỗi mạng hoặc server.", 'error');
         } finally {
             setIsUpdating(false);
@@ -227,14 +226,9 @@ const Profile: React.FC = () => {
     const handleChangePassword = async () => {
         setPasswordModalMessage(null);
 
-        const token = getUserSession()?.token;
-        if (!token) {
-            setPasswordModalMessage("Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.", 'error');
-            return;
-        }
-
         const { oldPassword, newPassword, confirmPassword } = passwords;
 
+        // Validation
         if (!oldPassword || !newPassword || !confirmPassword) {
             setPasswordModalMessage("Vui lòng điền đầy đủ thông tin.", 'error');
             return;
@@ -243,31 +237,35 @@ const Profile: React.FC = () => {
             setPasswordModalMessage("Mật khẩu mới và xác nhận không trùng nhau.", 'error');
             return;
         }
-        if (newPassword.length < 6) {
-            setPasswordModalMessage("Mật khẩu mới phải có ít nhất 6 ký tự.", 'error');
+        if (newPassword.length < 8) {
+            setPasswordModalMessage("Mật khẩu mới phải có ít nhất 8 ký tự.", 'error');
             return;
         }
 
         setIsUpdating(true);
 
         try {
-            console.log("📤 [DEBUG] Gọi changePassword với token:", token);
-            const res = await changePassword(oldPassword, newPassword);
-
-            console.log("📥 [DEBUG] changePassword response:", res);
+            const res = await changePassword({ oldPassword, newPassword });
 
             if (res.success) {
                 setPasswords({ oldPassword: "", newPassword: "", confirmPassword: "" });
-                setPasswordModalMessage(res.message || "Đổi mật khẩu thành công!", 'success');
+                setPasswordModalMessage("Đổi mật khẩu thành công! Vui lòng đăng nhập lại.", 'success');
+
+                // Đăng xuất sau khi đổi mật khẩu thành công
+                setTimeout(() => {
+                    clearUserSession();
+                    setPasswordMode(false);
+                    navigate("/", { replace: true });
+                }, 2000);
             } else {
                 setPasswordModalMessage(res.message || "Đổi mật khẩu thất bại. Vui lòng kiểm tra lại mật khẩu cũ.", 'error');
             }
         } catch (err: any) {
+            console.error("Lỗi đổi mật khẩu:", err);
             setPasswordModalMessage(err?.message || "Lỗi kết nối. Vui lòng thử lại sau.", 'error');
         } finally {
             setIsUpdating(false);
         }
-
     };
 
     // Khởi tạo lại editData khi mở modal chỉnh sửa
@@ -301,17 +299,57 @@ const Profile: React.FC = () => {
             <p className="text-xl text-gray-700 font-medium">Đang tải thông tin...</p>
         </div>
     );
-    if (error) return <div className="p-6 text-center text-red-600 text-lg font-medium bg-red-100 rounded-lg m-4 border border-red-300">{error}</div>;
-    if (!user) return <div className="p-6 text-center text-gray-500 text-lg">Chưa có thông tin người dùng.</div>;
+
+    if (error) return (
+        <div className="p-6 text-center text-red-600 text-lg font-medium bg-red-100 rounded-lg m-4 border border-red-300">
+            {error}
+        </div>
+    );
+
+    if (!user) return (
+        <div className="p-6 text-center text-gray-500 text-lg">Chưa có thông tin người dùng.</div>
+    );
 
     return (
         <div className="min-h-screen bg-gray-100 py-10 px-4 sm:px-6 lg:px-8 font-sans">
-            <div className="max-w-4xl mx-auto flex flex-col gap-8">
+            <div className="max-w-6xl mx-auto flex flex-col gap-8">
                 <h1 className="text-3xl font-extrabold text-gray-900 text-center tracking-tight">Tài Khoản Cá Nhân 👤</h1>
+
+                {/* Thống kê nhanh */}
+                {!statsLoading && statistics && (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div className="bg-white rounded-xl shadow-lg p-6 text-center border-l-4 border-blue-500">
+                            <div className="flex items-center justify-center gap-3">
+                                <Package className="w-8 h-8 text-blue-600" />
+                                <div>
+                                    <p className="text-2xl font-bold text-gray-900">{statistics.orders}</p>
+                                    <p className="text-gray-600 font-medium">Đơn hàng</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="bg-white rounded-xl shadow-lg p-6 text-center border-l-4 border-green-500">
+                            <div className="flex items-center justify-center gap-3">
+                                <ShoppingCart className="w-8 h-8 text-green-600" />
+                                <div>
+                                    <p className="text-2xl font-bold text-gray-900">{statistics.cartItems}</p>
+                                    <p className="text-gray-600 font-medium">Giỏ hàng</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="bg-white rounded-xl shadow-lg p-6 text-center border-l-4 border-red-500">
+                            <div className="flex items-center justify-center gap-3">
+                                <Heart className="w-8 h-8 text-red-600" />
+                                <div>
+                                    <p className="text-2xl font-bold text-gray-900">{statistics.wishlistItems}</p>
+                                    <p className="text-gray-600 font-medium">Yêu thích</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Container Chính: Thông tin & Menu */}
                 <div className="bg-white rounded-2xl shadow-2xl overflow-hidden md:flex">
-
                     {/* Sidebar/Menu chức năng */}
                     <div className="w-full md:w-1/3 p-6 border-b md:border-b-0 md:border-r border-indigo-100 bg-indigo-50">
                         <h2 className="text-xl font-bold text-indigo-800 mb-6 border-b pb-2 border-indigo-200">Quản Lý</h2>
@@ -336,9 +374,7 @@ const Profile: React.FC = () => {
                             >
                                 <Key className="w-5 h-5" /> Đổi mật khẩu
                             </button>
-                            {/* Bạn có thể thêm các chức năng khác ở đây: Lịch sử mua hàng, Địa chỉ giao hàng... */}
                             <button
-                                // Giả định có trang/chức năng này
                                 onClick={() => navigate('/orders')}
                                 className="flex items-center gap-3 w-full py-3 px-4 rounded-xl font-semibold transition-all duration-200 text-left text-indigo-700 hover:bg-indigo-100 hover:translate-x-1"
                             >
@@ -350,7 +386,7 @@ const Profile: React.FC = () => {
                         <div className="mt-10 pt-4 border-t border-indigo-200">
                             <button
                                 onClick={handleLogout}
-                                disabled={isLoggingOut} // Vô hiệu hóa nút khi đang đăng xuất
+                                disabled={isLoggingOut}
                                 className="flex items-center justify-center w-full py-3 px-4 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors font-semibold text-center shadow-lg hover:shadow-xl"
                             >
                                 {isLoggingOut ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <LogOut className="w-5 h-5 mr-2" />}
@@ -380,8 +416,9 @@ const Profile: React.FC = () => {
                             <div>
                                 <p className="text-4xl font-extrabold text-gray-900 tracking-tight">{user.name}</p>
                                 <p className="text-lg text-gray-500 mt-2">
-                                    Vai trò: <span className="font-bold text-indigo-600 bg-indigo-100 px-2 py-1 rounded-full">{user.role || "Người dùng"}</span>
+                                    Vai trò: <span className="font-bold text-indigo-600 bg-indigo-100 px-2 py-1 rounded-full">{user.role === 'admin' ? 'Quản trị viên' : 'Người dùng'}</span>
                                 </p>
+                                <p className="text-sm text-gray-400 mt-1">ID: {user.id}</p>
                             </div>
                         </div>
 
@@ -389,13 +426,14 @@ const Profile: React.FC = () => {
                             <InfoField label="Email" value={user.email} />
                             <InfoField label="Số điện thoại" value={user.phone} />
                             <InfoField label="Địa chỉ" value={user.address} />
-                            <InfoField label="Ngày tham gia" value={user.created_at ? new Date(user.created_at).toLocaleDateString() : "N/A"} />
+                            <InfoField label="Trạng thái" value={user.status === 'active' ? 'Đang hoạt động' : user.status === 'deleted' ? 'Đã xóa' : 'Chờ xác nhận'} />
+                            <InfoField label="Ngày tham gia" value={user.created_at ? new Date(user.created_at).toLocaleDateString('vi-VN') : "N/A"} />
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Modal/Dialog chỉnh sửa thông tin */}
+            {/* Modal chỉnh sửa thông tin */}
             <Modal
                 title="Chỉnh Sửa Thông Tin Cá Nhân"
                 isOpen={editMode}
@@ -450,14 +488,13 @@ const Profile: React.FC = () => {
                 </div>
             </Modal>
 
-            {/* Modal/Dialog đổi mật khẩu */}
+            {/* Modal đổi mật khẩu */}
             <Modal
                 title="Đổi Mật Khẩu"
                 isOpen={passwordMode}
                 onClose={() => setPasswordMode(false)}
             >
                 <div className="space-y-5">
-                    {/* Khu vực thông báo riêng cho Modal Đổi mật khẩu */}
                     {passwordMessage && (
                         <div className={`p-4 rounded-xl flex items-center mb-4 shadow-md ${passwordMessageType === 'success' ? 'bg-green-100 text-green-700 border border-green-300' : 'bg-red-100 text-red-700 border border-red-300'}`}>
                             {passwordMessageType === 'success' ? <CheckCircle className="w-5 h-5 mr-3" /> : <AlertTriangle className="w-5 h-5 mr-3" />}
@@ -473,7 +510,7 @@ const Profile: React.FC = () => {
                         type="password"
                     />
                     <InputField
-                        label="Mật khẩu mới (ít nhất 6 ký tự)"
+                        label="Mật khẩu mới (ít nhất 8 ký tự)"
                         placeholder="Nhập mật khẩu mới"
                         value={passwords.newPassword}
                         onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })}
@@ -509,20 +546,6 @@ const Profile: React.FC = () => {
                             {isUpdating ? 'Đang Lưu...' : passwordMessageType === 'success' ? 'Đang chuyển hướng...' : 'Đổi Mật Khẩu'}
                         </button>
                     </div>
-                </div>
-            </Modal>
-
-            {/* MODAL ĐANG ĐĂNG XUẤT */}
-            <Modal
-                title=""
-                isOpen={isLoggingOut}
-                onClose={() => { }}
-                className="max-w-sm"
-            >
-                <div className="flex flex-col items-center justify-center p-4">
-                    <Loader2 className="animate-spin h-8 w-8 text-red-600" />
-                    <p className="mt-4 text-xl font-bold text-red-600">Đang đăng xuất...</p>
-                    <p className="text-sm text-gray-500 mt-1">Hẹn gặp lại!</p>
                 </div>
             </Modal>
         </div>
