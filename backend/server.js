@@ -1,5 +1,8 @@
 import dotenv from "dotenv";
-dotenv.config(); // ⚡ phải load .env trước
+dotenv.config();
+
+import sequelize from "./src/config/db.js";
+// XÓA dòng import init.js từ đây vì đã import trong db.js
 
 import app from "./src/app.js";
 

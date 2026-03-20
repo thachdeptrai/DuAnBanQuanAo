@@ -1,5 +1,4 @@
-import { ChevronRight } from "lucide-react";
-import React from "react";
+import React, { useState } from "react";
 import type { Category as ApiCategory } from "../../NetWork/category.api";
 
 interface Props {
@@ -7,57 +6,81 @@ interface Props {
   onCategoryClick: (id: number) => void;
 }
 
-const CategorySection: React.FC<Props> = ({ categories = [], onCategoryClick }) => {
-  const colors = [
-    "from-blue-400 to-indigo-500",
-    "from-pink-400 to-purple-500",
-    "from-yellow-400 to-orange-500",
-    "from-green-400 to-teal-500",
-    "from-red-400 to-pink-500",
-    "from-cyan-400 to-blue-500",
-  ];
+const VISIBLE_COUNT = 6; // số danh mục hiển thị ban đầu
+
+const CategorySection: React.FC<Props> = ({
+  categories = [],
+  onCategoryClick,
+}) => {
+  const [showAll, setShowAll] = useState(false);
+
+  const displayedCategories = showAll
+    ? categories
+    : categories.slice(0, VISIBLE_COUNT);
 
   return (
     <section className="container mx-auto px-6 py-16">
-      <div className="text-center mb-12">
-        <h2 className="text-4xl font-bold text-gray-800 mb-4">Danh Mục Nổi Bật</h2>
-        <p className="text-gray-600 text-lg">Khám phá bộ sưu tập đa dạng của chúng tôi</p>
+      {/* Title */}
+      <div className="text-center mb-14">
+        <h2 className="text-4xl font-extrabold text-gray-800 mb-3">
+          Danh Mục Nổi Bật
+        </h2>
+        <p className="text-gray-500 text-lg">
+          Lựa chọn theo nhu cầu của bạn
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-        {categories.length === 0 ? (
-          <p className="text-center text-gray-500 col-span-4">Chưa có danh mục nào</p>
+      {/* Categories */}
+      <div className="flex flex-wrap justify-center gap-x-10 gap-y-12">
+        {displayedCategories.length === 0 ? (
+          <p className="text-gray-400">Chưa có danh mục nào</p>
         ) : (
-          categories.map((category, index) => (
+          displayedCategories.map((category) => (
             <div
               key={category.id}
               onClick={() => onCategoryClick(category.id)}
-              className="group relative rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-transform duration-300 cursor-pointer transform hover:-translate-y-2"
+              className="group w-[140px] flex flex-col items-center cursor-pointer"
             >
-              {/* Background Gradient + Ảnh */}
-              <div className={`h-64 bg-gradient-to-br ${colors[index % colors.length]} relative`}>
-                {category.image_url && (
-                  <img
-                    src={category.image_url}
-                    alt={category.name}
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                  />
-                )}
-                {/* Overlay mờ giúp chữ nổi */}
-                <div className="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-all duration-300"></div>
-                {/* Nội dung */}
-                <div className="absolute bottom-4 left-4 right-4 z-10 text-white">
-                  <h3 className="text-xl sm:text-2xl font-bold mb-2 drop-shadow-lg">{category.name}</h3>
-                  <button className="bg-white text-gray-800 px-5 py-2 rounded-full font-semibold hover:bg-gray-100 transition-all inline-flex items-center space-x-2 drop-shadow-md group-hover:scale-105">
-                    <span>Xem Thêm</span>
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
+              {/* Image */}
+              <div className="relative">
+                <div className="absolute -inset-1 rounded-full bg-gradient-to-tr from-primary/60 via-pink-400/60 to-orange-400/60 blur opacity-0 group-hover:opacity-100 transition duration-500" />
+
+                <div className="relative w-32 h-32 rounded-full overflow-hidden bg-white shadow-lg ring-4 ring-white transition-all duration-300 group-hover:scale-110">
+                  {category.image_url ? (
+                    <img
+                      src={category.image_url}
+                      alt={category.name}
+                      loading="lazy"
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
+                      No Image
+                    </div>
+                  )}
                 </div>
               </div>
+
+              {/* Name */}
+              <h3 className="mt-5 text-lg font-semibold text-gray-800 text-center transition-colors duration-300 group-hover:text-primary">
+                {category.name}
+              </h3>
             </div>
           ))
         )}
       </div>
+
+      {/* View More */}
+      {categories.length > VISIBLE_COUNT && (
+        <div className="mt-14 text-center">
+          <button
+            onClick={() => setShowAll((prev) => !prev)}
+            className="inline-flex items-center gap-2 px-8 py-3 rounded-full border border-gray-300 text-gray-700 font-semibold hover:bg-gray-100 transition"
+          >
+            {showAll ? "Thu gọn" : "Xem thêm"}
+          </button>
+        </div>
+      )}
     </section>
   );
 };
