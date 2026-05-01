@@ -1,10 +1,10 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { Op } from "sequelize";
-
+import sequelize from "../config/db.js";
 // Models
 import models from "../model/init.js";
-const { User, OTPCode, sequelize } = models; // ✅ ĐÃ IMPORT SEQUELIZE
+const { User, OTPCode } = models; // ✅ ĐÃ IMPORT SEQUELIZE
 const USER_FIELDS = {
   ID: "id",
   NAME: "name",
@@ -173,7 +173,7 @@ class AuthController {
           status: "active", // TÀI KHOẢN MỚI CÓ STATUS ACTIVE
           email_verified: true,
         },
-        { transaction }
+        { transaction },
       );
 
       // 7. Clean up OTP (Giữ nguyên)
@@ -185,7 +185,7 @@ class AuthController {
       // 8. Commit transaction (Giữ nguyên)
       await transaction.commit();
       console.log(
-        `✅ Đăng ký thành công (ID mới: ${newUser.id}) cho email: ${email}`
+        `✅ Đăng ký thành công (ID mới: ${newUser.id}) cho email: ${email}`,
       );
 
       return res.status(201).json({
@@ -204,7 +204,7 @@ class AuthController {
       // Trường hợp lỗi này chỉ xảy ra nếu ràng buộc UNIQUE trên email CHƯA được xóa
       if (error.name === "SequelizeUniqueConstraintError") {
         console.error(
-          "❌ Lỗi Database: Email bị trùng do Unique Constraint còn tồn tại."
+          "❌ Lỗi Database: Email bị trùng do Unique Constraint còn tồn tại.",
         );
         return res.status(409).json({
           success: false,
@@ -244,7 +244,7 @@ class AuthController {
         console.log("👑 Phát hiện admin cứng...");
         const isPasswordValid = await bcrypt.compare(
           password,
-          process.env.HARDCODED_ADMIN_HASH
+          process.env.HARDCODED_ADMIN_HASH,
         );
 
         if (isPasswordValid) {
@@ -311,14 +311,14 @@ class AuthController {
       const refreshToken = jwt.sign(
         { id: isHardcodedAdmin ? "admin_initial" : user.id, type: "refresh" },
         JWT_REFRESH_SECRET,
-        { expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN || "7d" }
+        { expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN || "7d" },
       );
 
       // 5. Update last login (chỉ user thường)
       if (!isHardcodedAdmin) {
         await User.update(
           { last_login: new Date() },
-          { where: { id: user.id } }
+          { where: { id: user.id } },
         );
       }
 
@@ -380,7 +380,7 @@ class AuthController {
       if (!email || !otp || !newPassword) {
         await transaction.rollback();
         console.log(
-          "❌ Thiếu thông tin đặt lại mật khẩu (email/otp/newPassword)"
+          "❌ Thiếu thông tin đặt lại mật khẩu (email/otp/newPassword)",
         );
         return res.status(400).json({
           success: false,
@@ -435,7 +435,7 @@ class AuthController {
           code: otp, // Thay otp thành code để khớp với tên biến trong service
           type: "reset_password",
         },
-        transaction
+        transaction,
       );
 
       if (!isValidOtp) {
@@ -451,7 +451,7 @@ class AuthController {
       console.log("🔐 Đang hash mật khẩu mới...");
       const hashedNewPassword = await bcrypt.hash(
         newPassword,
-        HASH_SALT_ROUNDS
+        HASH_SALT_ROUNDS,
       );
 
       // 6. Update password (Cập nhật mật khẩu)
@@ -463,7 +463,7 @@ class AuthController {
       // Gọi hàm service để xóa OTP đã dùng thành công trong transaction
       await invalidateOtpService(
         { email, type: "reset_password" },
-        transaction
+        transaction,
       );
       console.log("✅ OTP đã được vô hiệu hóa.");
 
@@ -562,7 +562,7 @@ class AuthController {
       const userEmail = req.user.email;
 
       console.log(
-        `🔄 Bắt đầu đổi mật khẩu cho user ID: ${userId}, Email: ${userEmail}`
+        `🔄 Bắt đầu đổi mật khẩu cho user ID: ${userId}, Email: ${userEmail}`,
       ); // 1. Validation
 
       if (!currentPassword || !newPassword) {
@@ -598,7 +598,7 @@ class AuthController {
 
       const isPasswordValid = await bcrypt.compare(
         currentPassword,
-        user.password
+        user.password,
       );
       if (!isPasswordValid) {
         await transaction.rollback();
@@ -621,7 +621,7 @@ class AuthController {
       console.log("🔐 Đang hash mật khẩu mới...");
       const hashedNewPassword = await bcrypt.hash(
         newPassword,
-        HASH_SALT_ROUNDS
+        HASH_SALT_ROUNDS,
       ); // 7. Update password (Cập nhật mật khẩu)
 
       user.password = hashedNewPassword;
@@ -697,7 +697,7 @@ class AuthController {
       const orderDirection = sortOrder.toUpperCase() === "ASC" ? "ASC" : "DESC";
 
       console.log(
-        `📊 Query: search=${search}, role=${role}, page=${page}, limit=${limit}`
+        `📊 Query: search=${search}, role=${role}, page=${page}, limit=${limit}`,
       );
 
       const { count, rows: users } = await User.findAndCountAll({
@@ -800,7 +800,7 @@ class AuthController {
         // 5. Kiểm tra trạng thái user
         if (user.status !== "active") {
           console.log(
-            `❌ User ${user.email} không active (status: ${user.status})`
+            `❌ User ${user.email} không active (status: ${user.status})`,
           );
           return res.status(403).json({
             success: false,
@@ -842,7 +842,7 @@ class AuthController {
           expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN || "7d",
           issuer: "sweetshop-api",
           audience: "sweetshop-client",
-        }
+        },
       );
 
       // 8. Cập nhật refresh token trong cookie
@@ -924,7 +924,7 @@ class AuthController {
       const existing = await User.findOne({ where: { email } });
       if (existing) {
         console.warn(
-          `[ADMIN] User creation failed: Email ${email} already exists.`
+          `[ADMIN] User creation failed: Email ${email} already exists.`,
         );
         return res.status(400).json({ message: "Email đã tồn tại" });
       }
@@ -1083,7 +1083,7 @@ class AuthController {
       await transaction.commit();
 
       console.log(
-        `✅ Admin ${adminId} đã ${action} tài khoản ${user.email} (ID: ${userId}). Trạng thái mới: ${status}`
+        `✅ Admin ${adminId} đã ${action} tài khoản ${user.email} (ID: ${userId}). Trạng thái mới: ${status}`,
       );
 
       return res.json({

@@ -1,15 +1,25 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-import sequelize from "./src/config/db.js";
-// XÓA dòng import init.js từ đây vì đã import trong db.js
-
 import app from "./src/app.js";
+import sequelize, { initializeDatabase } from "./src/config/db.js";
 
 const PORT = process.env.PORT || 4000;
 
-console.log("✅ Using database:", process.env.MYSQL_DATABASE);
+const startServer = async () => {
+  try {
+    await initializeDatabase();
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-});
+    // 🔥 FIX QUAN TRỌNG
+    app.locals.sequelize = sequelize;
+
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on http://localhost:${PORT}`);
+    });
+  } catch (error) {
+    console.error(error);
+    process.exit(1);
+  }
+};
+
+startServer();

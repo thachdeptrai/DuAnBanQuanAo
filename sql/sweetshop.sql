@@ -601,25 +601,13 @@ DELIMITER ;
 -- ----------------------------------------------------------------------
 
 -- Insert default admin user
-INSERT INTO users (name, email, password, role, status, email_verified) VALUES
-('Administrator', 'admin@fashion.com', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', 'active', TRUE);
+
 
 -- Insert sample categories
-INSERT INTO categories (name, slug, description, sort_order) VALUES
-('Thời Trang Nam', 'thoi-trang-nam', 'Thời trang nam đa dạng phong cách', 1),
-('Thời Trang Nữ', 'thoi-trang-nu', 'Thời trang nữ hợp xu hướng', 2),
-('Áo', 'ao', 'Các loại áo thời trang', 3),
-('Quần', 'quan', 'Quần các loại', 4);
 
 -- Insert sample brands
-INSERT INTO brands (name, slug, description, sort_order) VALUES
-('Nike', 'nike', 'Thương hiệu thể thao hàng đầu', 1),
-('Adidas', 'adidas', 'Thương hiệu thời trang thể thao', 2),
-('Zara', 'zara', 'Thời trang nhanh, hợp xu hướng', 3);
+
 
 -- Insert sample coupons
-INSERT INTO coupons (code, description, discount_type, discount_value, min_order_amount, usage_limit, start_date, end_date) VALUES
-('WELCOME10', 'Giảm 10% cho đơn hàng đầu tiên', 'percentage', 10, 100000, 1000, NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY)),
-('FREESHIP', 'Miễn phí vận chuyển', 'fixed_amount', 20000, 150000, 500, NOW(), DATE_ADD(NOW(), INTERVAL 15 DAY));
 
 COMMIT;

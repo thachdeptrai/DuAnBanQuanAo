@@ -1,7 +1,6 @@
 // src/model/init.js
 import { DataTypes } from "sequelize";
 import sequelize from "../config/db.js";
-
 import { setupAssociations } from "./associations.js";
 
 // Import model factory functions
@@ -21,7 +20,9 @@ import OrderItemModel from "./order_item.model.js";
 import CouponModel from "./coupon.model.js";
 import OTPCodeModel from "./otp.model.js";
 
-// INIT ALL MODELS
+console.log("🛠️  Loading models...");
+
+// Khởi tạo Models
 const models = {
   User: UserModel(sequelize, DataTypes),
   Product: ProductModel(sequelize, DataTypes),
@@ -38,10 +39,11 @@ const models = {
   OrderItem: OrderItemModel(sequelize, DataTypes),
   Coupon: CouponModel(sequelize, DataTypes),
   OTPCode: OTPCodeModel(sequelize, DataTypes),
-  sequelize: sequelize,
 };
 
-// SETUP ASSOCIATIONS (1 LẦN DUY NHẤT)
+// Thiết lập quan hệ
 setupAssociations(models);
+
+console.log("✅ All models loaded: ", Object.keys(models).join(", "));
 
 export default models;

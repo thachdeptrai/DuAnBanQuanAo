@@ -1,21 +1,32 @@
-import { Sequelize, QueryTypes } from "sequelize";
-import "dotenv/config";
+import { Sequelize } from "sequelize";
+import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
 
-const dbName = process.env.MYSQL_DATABASE;
-const dbUser = process.env.MYSQL_USER;
-const dbPassword = process.env.MYSQL_PASSWORD;
-const dbHost = process.env.MYSQL_HOST || "localhost";
-const dbPort = process.env.MYSQL_PORT || 3306;
+// ===== LOAD ENV =====
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-// Tạo kết nối chính thức
+dotenv.config({ path: path.resolve(__dirname, "../../.env") });
+
+// ===== CONFIG =====
+const dbName = process.env.MYSQL_DATABASE || "sweetshop";
+const dbUser = process.env.MYSQL_USER || "root";
+const dbPassword = process.env.MYSQL_PASSWORD || "";
+const dbHost = process.env.MYSQL_HOST || "127.0.0.1";
+const dbPort = parseInt(process.env.MYSQL_PORT) || 3306;
+
+console.log("-----------------------------------------");
+console.log(`🔌 MySQL: ${dbUser}@${dbHost}:${dbPort}`);
+console.log(`📂 Database: ${dbName}`);
+console.log("-----------------------------------------");
+
+// ===== MAIN SEQUELIZE =====
 const sequelize = new Sequelize(dbName, dbUser, dbPassword, {
   host: dbHost,
   port: dbPort,
   dialect: "mysql",
-  logging: console.log,
-  dialectOptions: {
-    connectTimeout: 60000,
-  },
+  logging: false,
   pool: {
     max: 5,
     min: 0,
@@ -24,85 +35,81 @@ const sequelize = new Sequelize(dbName, dbUser, dbPassword, {
   },
 });
 
-// Hàm khởi tạo database hoàn chỉnh
+// ===== INIT DATABASE =====
 async function initializeDatabase() {
-  try {
-    console.log("🔄 Đang khởi tạo database...");
+  let sequelizeTemp;
 
-    // 1. Tạo kết nối tạm để kiểm tra/tạo database
-    const sequelizeTemp = new Sequelize("", dbUser, dbPassword, {
+  try {
+    console.log("🔄 B1: Check MySQL connection...");
+
+    // connect không chọn DB
+    sequelizeTemp = new Sequelize("", dbUser, dbPassword, {
       host: dbHost,
       port: dbPort,
       dialect: "mysql",
       logging: false,
     });
 
-    console.log("🔄 Đang kết nối đến MySQL server...");
     await sequelizeTemp.authenticate();
-    console.log("✅ Kết nối MySQL Server thành công!");
+    console.log("✅ MySQL connected!");
 
-    // Kiểm tra database tồn tại
-    const databases = await sequelizeTemp.query(
-      `SHOW DATABASES LIKE '${dbName}'`,
-      { type: QueryTypes.SELECT }
-    );
+    // check database tồn tại
+    const [dbs] = await sequelizeTemp.query(`SHOW DATABASES LIKE '${dbName}'`);
 
-    if (databases.length > 0) {
-      console.log(`✅ Database '${dbName}' đã tồn tại.`);
-    } else {
-      console.log(`🔄 Database '${dbName}' chưa tồn tại, đang tạo...`);
+    if (dbs.length === 0) {
+      console.log(`🔄 Creating database '${dbName}'...`);
       await sequelizeTemp.query(
-        `CREATE DATABASE \`${dbName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
+        `CREATE DATABASE \`${dbName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`,
       );
-      console.log(`✨ Database '${dbName}' đã được tạo thành công.`);
+      console.log("✅ Database created!");
+    } else {
+      console.log("✅ Database exists!");
     }
 
     await sequelizeTemp.close();
 
-    // 2. Kết nối đến database chính
-    console.log("🔄 Đang kết nối đến database...");
+    // ===== CONNECT DB =====
+    console.log("🔄 B2: Connect database...");
     await sequelize.authenticate();
-    console.log("✅ Kết nối đến DB 'sweetshop' thành công!");
+    console.log("✅ Connected to DB!");
 
-    // 3. Import và khởi tạo models
-    console.log("🔄 Đang khởi tạo models và associations...");
-    const models = await import("../model/init.js");
-    console.log("✅ Models và associations đã được khởi tạo!");
+    // ===== LOAD MODELS =====
+    console.log("🔄 B3: Loading models...");
+    const { default: models } = await import("../model/init.js");
+    console.log("✅ Models loaded!");
 
-    // 4. Đồng bộ hóa database
-    console.log("🔄 Đang đồng bộ hóa database...");
-    await sequelize.sync({
-      force: false,
-      alter: true,
-    });
-    console.log("✅ Đồng bộ hóa database thành công!");
+    // ===== SYNC DB =====
+    console.log("🔄 B4: Sync database...");
 
-    // 5. Hiển thị các bảng đã tạo
-    const [tables] = await sequelize.query("SHOW TABLES");
-    console.log("📊 Các bảng đã được tạo:");
+    /**
+     * ⚠️ DEV lần đầu:
+     * dùng force: true để tạo bảng sạch
+     * sau đó đổi lại sequelize.sync()
+     */
 
-    if (tables.length === 0) {
-      console.log("   ❌ Không có bảng nào được tạo!");
-    } else {
-      tables.forEach((table, index) => {
-        const tableName = table[`Tables_in_${dbName}`];
-        console.log(`   ${index + 1}. ${tableName}`);
-      });
-    }
+    await sequelize.sync({ force: true });
+    // sau này đổi thành:
+    // await sequelize.sync();
 
-    return models.default;
+    console.log("✅ Database synced!");
+
+    return models;
   } catch (error) {
-    console.error("❌ Lỗi khởi tạo database:", error);
+    if (sequelizeTemp) await sequelizeTemp.close();
 
-    if (error.code === "MODULE_NOT_FOUND") {
-      console.error("   📁 Không tìm thấy file model/init.js");
-      console.error("   📍 Kiểm tra đường dẫn:", error.path);
+    console.error("❌ INIT DB ERROR:");
+
+    if (error.name === "SequelizeAccessDeniedError") {
+      console.error("👉 Sai user/password MySQL");
+    } else if (error.code === "ECONNREFUSED") {
+      console.error("👉 MySQL chưa bật (Laragon/XAMPP)");
+    } else {
+      console.error("👉", error.message);
     }
 
     throw error;
   }
 }
 
-// Export chỉ sequelize, không export models
 export default sequelize;
 export { initializeDatabase };
